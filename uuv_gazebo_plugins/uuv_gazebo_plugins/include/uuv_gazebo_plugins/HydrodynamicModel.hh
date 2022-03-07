@@ -32,10 +32,14 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 #include <uuv_gazebo_plugins/Def.hh>
 #include <uuv_gazebo_plugins/BuoyantObject.hh>
 
+#include <wave_gazebo_plugins/Wavefield.hh>
+#include <wave_gazebo_plugins/WavefieldEntity.hh>
+#include <wave_gazebo_plugins/WavefieldModelPlugin.hh>
 
 namespace gazebo
 {
@@ -244,6 +248,24 @@ class HMFossen : public HydrodynamicModel
 
   /// \brief Quadratic damping coefficients
   protected: std::vector<double> quadDampCoef;
+
+  /// \brief The name of the wave model
+  protected: std::string waveModelName;
+
+  /// \brief The wave parameters.
+  protected: std::shared_ptr<const WaveParameters> waveParams;
+
+  /// \brief Applies wave force on link
+  public: void ApplyWaveForce();
+
+  /// \brief Computes the wave velocities in the world frame
+  public: void ComputeWaveVel();
+
+  /// \brief Wave linear velocity
+  protected: Eigen::Vector3d WaveLinVel = Eigen::Vector3d::Zero();
+
+  /// \brief Wave angular velocity
+  protected: Eigen::Vector3d WaveAngVel = Eigen::Vector3d::Zero();
 };
 
 //////////////////////////////////////////////////////////////////////////////
