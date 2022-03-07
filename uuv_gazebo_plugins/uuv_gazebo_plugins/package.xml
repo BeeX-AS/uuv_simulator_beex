@@ -22,6 +22,7 @@
   <depend>gazebo_dev</depend>
   <depend>protobuf-dev</depend>
   <depend>eigen</depend>
+  <depend>wave_gazebo_plugins</depend>
 
   <test_depend>rosunit</test_depend>
 

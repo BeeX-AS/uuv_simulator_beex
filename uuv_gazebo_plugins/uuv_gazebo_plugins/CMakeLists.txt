@@ -5,6 +5,7 @@ project(uuv_gazebo_plugins)
 add_definitions(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
+    wave_gazebo_plugins
     gazebo_dev)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
@@ -45,6 +46,8 @@ catkin_package(
     uuv_thruster_plugin
     uuv_fin_plugin
     uuv_dynamics
+  CATKIN_DEPENDS
+    wave_gazebo_plugins
 )
 
 include_directories(${PROJECT_SOURCE_DIR}/include
