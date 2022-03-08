@@ -786,9 +786,9 @@ void WavefieldSampler::ComputeVelocities(
   // Compute the target function and Jacobian. Also calculate pz,
   // the z-component of the Gerstner wave, which we essentially get for free.
   // cppcheck-suppress constParameter
-  auto wave_fdf = [=](auto x, auto p, auto t, auto& wp, auto& F, auto& J)
+  auto wave_fdf = [=](auto x, auto p, auto t, auto& wp, auto& F, auto& J, double z)
   {
-    // double pz = 0;
+    double pz = 0;
     F(0) = p.x() - x.x();
     F(1) = p.y() - x.y();
     J(0, 0) = -1;
@@ -801,8 +801,9 @@ void WavefieldSampler::ComputeVelocities(
       double dx = wp.dir[i].X();
       double dy = wp.dir[i].Y();
       // const double q = wp.q[i];
-      const double a = wp.a[i];
       const double k = wp.k[i];
+      const double depth_factor = exp(k * z);
+      const double a = wp.a[i] * depth_factor;
       const double dot = x.x() * dx + x.y() * dy;
       const double theta = k * dot - wp.omega[i] * t + wp.phi[i];
       const double s = std::sin(theta);
@@ -812,7 +813,7 @@ void WavefieldSampler::ComputeVelocities(
       const double df1y = akc * dx * dy;
       const double df2x = df1y;
       const double df2y = akc * dy * dy;
-      // pz += a * c;
+      pz += a * c;
       F(0) += a * dx * s;
       F(1) += a * dy * s;
       J(0, 0) += df1x;
@@ -821,10 +822,10 @@ void WavefieldSampler::ComputeVelocities(
       J(1, 1) += df2y;
     }
     // Exponentially grow the waves
-    // return pz * (1-exp(-1.0*(time-time_init)/_waveParams.Tau()));
+    return pz;
   };
 
-  auto solveVelocities = [=](auto x, auto wp, auto t, auto& v, auto& w)
+  auto solveVelocities = [=](auto x, auto wp, auto t, auto& v, auto& w, double z)
   {
     v(0) = v(1) = v(2) = 0;
     Eigen::Vector3d N;
@@ -836,8 +837,9 @@ void WavefieldSampler::ComputeVelocities(
       double dx = wp.dir[i].X();
       double dy = wp.dir[i].Y();
       // const double q = wp.q[i];
-      const double a = wp.a[i];
       const double k = wp.k[i];
+      const double depth_factor = exp(k * z);
+      const double a = wp.a[i] * depth_factor;
       // const double dot = x.x() * dx + x.y() * dy;
       // const double theta = k * dot - wp.omega[i] * t + wp.phi[i];
       // const double s = std::sin(theta);
@@ -888,7 +890,7 @@ void WavefieldSampler::ComputeVelocities(
   // wave field at the desired point p.
   // cppcheck-suppress constParameter
   auto solver = [=](auto& fdfunc, auto x0, auto p, auto t, \
-                    auto& wp, auto tol, auto nmax, auto& v, auto& w)
+                    auto& wp, auto tol, auto nmax, auto& v, auto& w, double z)
   {
     int n = 0;
     double err = 1;
@@ -898,13 +900,14 @@ void WavefieldSampler::ComputeVelocities(
     Eigen::Matrix2d J;
     while (std::abs(err) > tol && n < nmax)
     {
-      fdfunc(x0, p, t, wp, F, J);
+      pz = fdfunc(x0, p, t, wp, F, J, z + pz);
       xn = x0 - J.inverse() * F;
       x0 = xn;
       err = F.norm();
       n++;
     }
-    solveVelocities(x0, wp, t, v, w);
+    solveVelocities(x0, wp, t, v, w, z + pz);
+    // std::cout<< "z " << pz << " " << z << "\n";
     // std::cout<< "lin vel " << v << std::endl;
     // std::cout<< "ang vel " << w << std::endl;
     // return pz;
@@ -932,7 +935,7 @@ void WavefieldSampler::ComputeVelocities(
   // (this is within sum{amplitudes} of the solution)
   Eigen::Vector2d p2(_point.X(), _point.Y());
   // const double pz = solver(wave_fdf, p2, p2, time, wp, tol, nmax);
-  solver(wave_fdf, p2, p2, time, wp, tol, nmax, v, w);
+  solver(wave_fdf, p2, p2, time, wp, tol, nmax, v, w, _point.Z());
   // Removed so that height is reported relative to mean water level
   // const double h = pz - _point.Z();
   // const double h = pz;

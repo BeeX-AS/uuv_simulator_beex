@@ -409,10 +409,10 @@ void HMFossen::ApplyHydrodynamicForces(
   // Compute the relative velocity
   velRel = EigenStack(
     this->ToNED(linVel - flowVel - waveFlowVel),
-    // this->ToNED(angVel - waveFlowAngVel));
+    this->ToNED(angVel - waveFlowAngVel));
     // this->ToNED(linVel - flowVel),
-    this->ToNED(angVel));
-  // std::cout << linVel << " " << flowVel << " " << waveFlowVel << " " << angVel << " " << waveFlowAngVel << std::endl;
+    // this->ToNED(angVel));
+  // std::cout << linVel << " " << flowVel << " " << waveFlowVel << " " << angVel << " " << waveFlowAngVel << "\n";
 
   // Update added Coriolis matrix
   this->ComputeAddedCoriolisMatrix(velRel, this->Ma, this->Ca);
