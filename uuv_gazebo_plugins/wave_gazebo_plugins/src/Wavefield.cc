@@ -347,6 +347,12 @@ class WaveParametersPrivate
       this->pdf_func = [](double x) { return pow(cos(x),4); };
     }
 
+    if (this->height == 0 or this->number == 0){
+      gzmsg << "No waves used "
+            << "\n";
+      return;
+    }
+
     SampleDirections();
 
     if (!this->model.compare("PMS"))
