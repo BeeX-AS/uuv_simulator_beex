@@ -218,14 +218,22 @@ class WaveParametersPrivate
     this->directions.clear();
 
     double range;
-    if (spread == 1){
+    double direction = atan2(this->direction.Y(), this->direction.X());
+    if (spread == 0){
+      const ignition::math::Vector2d d = this->direction.Normalized();
+      for (size_t i = 0; i < this->number; ++i)
+      {
+        this->angles.push_back(0);
+        this->spreading_function.push_back(1);
+        this->directions.push_back(d);
+      }
+    } else if (spread == 1){
       range = M_PI * 0.5;
     } else {
       range = M_PI * 0.375;
     }
     double cdf_step = range / this->number;
     double k = pow(2, 2*spread-1) * fact(spread) * fact(spread-1) / M_PI / fact(2*spread - 1);
-    double direction = atan2(this->direction.Y(), this->direction.X());
     double epsilon = 1e-9;
     double y, g;
 
@@ -296,14 +304,18 @@ class WaveParametersPrivate
     // this->directions.clear();
 
     // Vector for spaceing
-    double omega_start = this->angularFrequency / 1.6;
-    double omega_spacing = (this->angularFrequency * 3 - omega_start) / this->number;
+    double omega_start = this->angularFrequency * 0.704; // w_min ~= pi/T2 (Faltinsen 1990, pg 27)
+    double omega_end = this->angularFrequency * 2; // approx same spectral intensity as w_min
+    double omega_spacing = (omega_end - omega_start) / this->number;
 
     for (size_t i = 0; i < this->number; ++i)
     {
       const int n = i - 1;
       // const double scaleFactor = std::pow(this->scale, n);
+
+      // Randomly sample from w_k+-(dw/2) (Fossen 2011 pg 209)
       const double omega = omega_start + (i - 0.5 + double(rand()) / RAND_MAX) * omega_spacing;
+
       const double pms = pm(omega, this->angularFrequency);
       const double S = pms * this->spreading_function.at(i);  // MSS/documentation/Tutorial/M5 pg. 22
       const double a = this->gain*std::sqrt(2.0*S*omega_spacing);
@@ -347,7 +359,7 @@ class WaveParametersPrivate
       this->pdf_func = [](double x) { return pow(cos(x),4); };
     }
 
-    if (this->height == 0 or this->number == 0){
+    if (this->height < 1e-2 or this->number == 0){
       gzmsg << "No waves used "
             << "\n";
       return;
