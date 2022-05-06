@@ -1,8 +1,6 @@
 # `uuv_simulator`: Unmanned Underwater Vehicle (UUV) simulation with Gazebo
 
-[![Build Status](https://travis-ci.org/uuvsimulator/uuv_simulator.svg?branch=dev%2Ftravis_integration)](https://travis-ci.org/uuvsimulator/uuv_simulator)
-[![GitHub issues](https://img.shields.io/github/issues/uuvsimulator/uuv_simulator.svg)](https://github.com/uuvsimulator/uuv_simulator/issues)
-[![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://github.com/uuvsimulator/uuv_simulator/blob/master/LICENSE)
+
 
 > Link to the `uuv_simulator` repository [here](https://github.com/uuvsimulator/uuv_simulator)
 
@@ -28,6 +26,20 @@ If you are using this simulator for your publication, please cite:
 ```
 
 In you are willing to contribute to this package, please check the instructions in [CONTRIBUTING](https://github.com/uuvsimulator/uuv_simulator/blob/master/CONTRIBUTING.md).
+
+# Modifications to UUV simulation
+
+- Implementation of ocean waves forces on underwater vehicles
+- Using wave_gazebo_plugins from [VRX](https://github.com/osrf/vrx)
+- Modifications upon wave_gazebo_plugins from [VRX](https://github.com/osrf/vrx)
+    - Calculate wave velocities instead of wave displacement
+    - Sampling of wave direction using wave spreading function ([Fossen](https://github.com/cybergalactic/MSS/blob/master/documentation/Tutoiral%20on%20modelling%20and%20simulation%20of%20marine%20craft/M5_disturbances.pdf))
+    - Variation of wave amplitude with depth ([Fossen](https://github.com/cybergalactic/MSS/blob/master/documentation/Tutoiral%20on%20modelling%20and%20simulation%20of%20marine%20craft/M2_Hydrodynamics.pdf))
+- Wave velocities obtained from wave_gazebo_plugins were integrated into uuv_gazebo_plugins/HydrodynamicModel.cc, where wave velocities are supplied as relative motion of the vehicle
+- Wave motion would **not** be 100% accurate as
+    - The fluid structure interaction was not accounted for in the simulation
+    - Wave forces on vehicle was approximated by integrating and averaging wave velocities over area of vehicle in wave coordinates, not world coordinates
+- For usage instructions, please refer to README in simulation repo
 
 # Features
 
