@@ -69,6 +69,7 @@ class WaveParametersPrivate
     gain(1.0),
     height(1.25),
     spread(1),
+    gamma(3.3),
     cdf_func(nullptr),
     pdf_func(nullptr)
   {
@@ -122,8 +123,11 @@ class WaveParametersPrivate
   /// \brief The mean wavenumber (derived).
   public: double wavenumber;
 
-  /// \brief The mean wavenumber (derived).
+  /// \brief The s of spreading function.
   public: int spread;
+
+  /// \brief The gamma for JONSWAP.
+  public: double gamma;
 
   /// \brief The component wave angular frequencies (derived).
   public: std::vector<double> angularFrequencies;
@@ -289,9 +293,12 @@ class WaveParametersPrivate
     this->direction = Geometry::Normalize(this->direction);
 
     // Derived mean values
-    // this->angularFrequency = 2.0 * M_PI / this->period;
-    this->angularFrequency = 1.256/std::sqrt(this->height);
-    this->period = 2.0 * M_PI / this->angularFrequency;
+    if (this->period == 0){
+      this->angularFrequency = 1.256/std::sqrt(this->height);
+      this->period = 2.0 * M_PI / this->angularFrequency;
+    } else {
+      this->angularFrequency = 2.0 * M_PI / this->period;
+    }
     this->wavenumber = \
       Physics::DeepWaterDispersionToWavenumber(this->angularFrequency);
     this->wavelength = 2.0 * M_PI / this->wavenumber;
@@ -348,6 +355,174 @@ class WaveParametersPrivate
       // directions.push_back(d);
     }
   }
+
+  /// \brief Recalculate for Modified Pierson-Moskowitz spectrum sampling model
+  public: void RecalculateMPM()
+  {
+    // Normalize direction
+    this->direction = Geometry::Normalize(this->direction);
+
+    // Derived mean values
+    if (this->period == 0){
+      this->angularFrequency = 1.256/std::sqrt(this->height);
+      this->period = 2.0 * M_PI / this->angularFrequency;
+    } else {
+      this->angularFrequency = 2.0 * M_PI / this->period;
+    }
+    this->wavenumber = \
+      Physics::DeepWaterDispersionToWavenumber(this->angularFrequency);
+    this->wavelength = 2.0 * M_PI / this->wavenumber;
+
+    // Update components
+    this->angularFrequencies.clear();
+    this->amplitudes.clear();
+    this->phases.clear();
+    this->wavenumbers.clear();
+    // this->steepnesses.clear();
+    // this->directions.clear();
+
+    // Vector for spaceing
+    double omega_start = this->angularFrequency * 0.704; // w_min ~= pi/T2 (Faltinsen 1990, pg 27)
+    double omega_end = this->angularFrequency * 2; // approx same spectral intensity as w_min
+    double omega_spacing = (omega_end - omega_start) / this->number;
+
+    double Tz = 0.710 * this->period;
+    double A = 4 * pow(M_PI, 3) * pow(this->height, 2) / pow(Tz, 4);
+    double B = 16 * pow(M_PI, 3) / pow(Tz, 4);
+
+    for (size_t i = 0; i < this->number; ++i)
+    {
+      const int n = i - 1;
+      // const double scaleFactor = std::pow(this->scale, n);
+
+      // Randomly sample from w_k+-(dw/2) (Fossen 2011 pg 209)
+      const double omega = omega_start + (i - 0.5 + double(rand()) / RAND_MAX) * omega_spacing;
+
+      const double Sw = A * pow(omega, -5) * exp(-B * pow(omega, -4));
+      const double S = Sw * this->spreading_function.at(i);  // MSS/documentation/Tutorial/M5 pg. 22
+      const double a = this->gain*std::sqrt(2.0*S*omega_spacing);
+      const double k = Physics::DeepWaterDispersionToWavenumber(omega);
+      const double phi = this->phase + double(rand()) / RAND_MAX * 2.0 * M_PI;
+      // double q = 0.0;
+      // if (a != 0)
+      // {
+      //   q = std::min(1.0, this->steepness / (a * k * this->number));
+      // }
+
+      this->amplitudes.push_back(a);
+      this->angularFrequencies.push_back(omega);
+      this->phases.push_back(phi);
+      // this->steepnesses.push_back(q);
+      this->wavenumbers.push_back(k);
+
+      // Direction
+      // const double c = std::cos(n * this->angle);
+      // const double s = std::sin(n * this->angle);
+      // // const TransformMatrix T(
+      // //   c, -s,
+      // //   s,  c
+      // // );
+      // // const ignition::math::Vector2d d = T(this->direction);
+      // const ignition::math::Vector2d d(
+      //   c * this->direction.X() - s * this->direction.Y(),
+      //   s * this->direction.X() + c * this->direction.Y());
+      // directions.push_back(d);
+    }
+  }
+
+  /// \brief Recalculate for JONSWAP spectrum sampling model
+  public: void RecalculateJONSWAP()
+  {
+    // Normalize direction
+    this->direction = Geometry::Normalize(this->direction);
+
+    // Derived mean values
+    if (this->period == 0){
+      this->angularFrequency = 1.256/std::sqrt(this->height);
+      this->period = 2.0 * M_PI / this->angularFrequency;
+    } else {
+      this->angularFrequency = 2.0 * M_PI / this->period;
+    }
+    double T1 = 0.834 * this->period;
+    double B = 944 / pow(T1, 4);
+    this->wavenumber = \
+      Physics::DeepWaterDispersionToWavenumber(this->angularFrequency);
+    this->wavelength = 2.0 * M_PI / this->wavenumber;
+
+    // Update components
+    this->angularFrequencies.clear();
+    this->amplitudes.clear();
+    this->phases.clear();
+    this->wavenumbers.clear();
+    // this->steepnesses.clear();
+    // this->directions.clear();
+
+    // Vector for spaceing
+    double omega_start = this->angularFrequency * 0.704; // w_min ~= pi/T2 (Faltinsen 1990, pg 27)
+    double omega_end = this->angularFrequency * 2; // approx same spectral intensity as w_min
+    double omega_spacing = (omega_end - omega_start) / this->number;
+
+    if (this->gamma == 0){  // DNV formula DNV conversion factor from <Environmenatal conditions and environmental loads. April 2007, DNV-RP-C205>  
+      double k = 2*M_PI/(this->angularFrequency*sqrt(this->height));
+      if (k <= 3.6){
+        this->gamma = 5;
+      }
+      else if (k <= 5){
+		    this->gamma = exp(5.75-1.15*k);
+      }
+	    else{ // k > 5
+		    this->gamma = 1;
+      }
+    }
+
+    for (size_t i = 0; i < this->number; ++i)
+    {
+      const int n = i - 1;
+      // const double scaleFactor = std::pow(this->scale, n);
+
+      // Randomly sample from w_k+-(dw/2) (Fossen 2011 pg 209)
+      const double omega = omega_start + (i - 0.5 + double(rand()) / RAND_MAX) * omega_spacing;
+
+      double sigma;
+      if (omega <= 5.24/T1){
+        sigma = 0.07;
+      } else {
+        sigma = 0.09;
+      }
+      double Y = exp(-pow((0.191 * omega * T1 - 1)/(sqrt(2)*sigma), 2));          
+      double Conv_factor =  1-0.287*log(this->gamma);
+      double A = 155 * pow(this->gamma, Y) * pow(this->height, 2) / pow(T1, 4) * Conv_factor;
+      const double Sw = A * pow(omega, -5) * exp(-B * pow(omega, -4));
+      const double S = Sw * this->spreading_function.at(i);  // MSS/documentation/Tutorial/M5 pg. 22
+      const double a = this->gain*std::sqrt(2.0*S*omega_spacing);
+      const double k = Physics::DeepWaterDispersionToWavenumber(omega);
+      const double phi = this->phase + double(rand()) / RAND_MAX * 2.0 * M_PI;
+      // double q = 0.0;
+      // if (a != 0)
+      // {
+      //   q = std::min(1.0, this->steepness / (a * k * this->number));
+      // }
+
+      this->amplitudes.push_back(a);
+      this->angularFrequencies.push_back(omega);
+      this->phases.push_back(phi);
+      // this->steepnesses.push_back(q);
+      this->wavenumbers.push_back(k);
+
+      // Direction
+      // const double c = std::cos(n * this->angle);
+      // const double s = std::sin(n * this->angle);
+      // // const TransformMatrix T(
+      // //   c, -s,
+      // //   s,  c
+      // // );
+      // // const ignition::math::Vector2d d = T(this->direction);
+      // const ignition::math::Vector2d d(
+      //   c * this->direction.X() - s * this->direction.Y(),
+      //   s * this->direction.X() + c * this->direction.Y());
+      // directions.push_back(d);
+    }
+  }
   /// \brief Recalculate all derived quantities from inputs.
   public: void Recalculate()
   {
@@ -374,11 +549,23 @@ class WaveParametersPrivate
             << std::endl;
       this->RecalculatePms();
     }
+    else if (!this->model.compare("MPM"))
+    {
+      gzmsg << "Using Modified Pierson-Moskowitz spectrum sampling wavefield model "
+            << std::endl;
+      this->RecalculateMPM();
+    }
     else if (!this->model.compare("CWR"))
     {
       gzmsg << "Using Constant wavelength-ampltude ratio wavefield model "
             << std::endl;
       this->RecalculateCmr();
+    }
+    else if (!this->model.compare("JONSWAP"))
+    {
+      gzmsg << "Using JONSWAP spectrum sampling wavefield model "
+            << std::endl;
+      this->RecalculateJONSWAP();
     }
     else
     {
@@ -428,7 +615,9 @@ void WaveParameters::SetFromSDF(sdf::Element& _sdf)
   this->data->height = Utilities::SdfParamDouble(_sdf, "height", \
                                                 this->data->height);
   this->data->spread = Utilities::SdfParamDouble(_sdf, "spread", \
-                                                this->data->height);
+                                                this->data->spread);
+  this->data->gamma = Utilities::SdfParamDouble(_sdf, "gamma", \
+                                                this->data->gamma);
   this->data->Recalculate();
 }
 
@@ -495,6 +684,11 @@ float WaveParameters::Gain() const
 int WaveParameters::Spread() const
 {
   return this->data->spread;
+}
+
+double WaveParameters::Gamma() const
+{
+  return this->data->gamma;
 }
 
 ignition::math::Vector2d WaveParameters::Direction() const
@@ -608,6 +802,7 @@ void WaveParameters::DebugPrint() const
   gzmsg << "tau:  " << this->data->tau << std::endl;
   gzmsg << "gain:  " << this->data->gain << std::endl;
   gzmsg << "spread:  " << this->data->spread << std::endl;
+  gzmsg << "gamma:  " << this->data->gamma << std::endl;
   gzmsg << "Derived Parameters:" << std::endl;
   gzmsg << "amplitudes:  " << this->data->amplitudes << std::endl;
   gzmsg << "wavenumbers: " << this->data->wavenumbers << std::endl;

@@ -110,6 +110,9 @@ public: double height() const;
     /// \brief Spread for spreading wave direction, can be int 1 or 2.
 public: int Spread() const;
 
+    /// \brief JONSWAP gamma, typically 3.3.
+public: double Gamma() const;
+
 /// \brief A two component vector specifiying the direction
     /// of the mean wave.
 public: ignition::math::Vector2d Direction() const;
@@ -171,6 +174,11 @@ public: void SetHeight(double _height);
 ///
 /// \param[in] _spread The spread.
 public: void SetSpread(int _spread);
+
+    /// \brief Set the JONSWAP gamma.
+///
+/// \param[in] _gamma gamma value.
+public: void SetGamma(double _gamma);
 
 /// \brief Set the mean wave direction.
 ///
