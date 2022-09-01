@@ -220,7 +220,8 @@ class WaveParametersPrivate
     double range;
     double direction = atan2(this->direction.Y(), this->direction.X());
     if (spread == 0){
-      const ignition::math::Vector2d d = this->direction.Normalized();
+      ignition::math::Vector2d d = this->direction;
+      d.Normalize();
       for (size_t i = 0; i < this->number; ++i)
       {
         this->angles.push_back(0);
@@ -241,9 +242,9 @@ class WaveParametersPrivate
     double x = 0;
     if (this->number % 2){
       this->angles.push_back(0);
-      sample = cdf_step;
+      sample = cdf_step; // initial guess for newton iteration
     } else {
-      sample = cdf_step / 2;
+      sample = cdf_step / 2; // initial guess for newton iteration
     }
     for (size_t i = 0; i < int(this->number / 2); ++i)
     {
