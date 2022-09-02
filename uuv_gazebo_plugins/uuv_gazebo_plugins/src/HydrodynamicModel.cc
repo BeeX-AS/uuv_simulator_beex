@@ -397,7 +397,7 @@ void HMFossen::ApplyHydrodynamicForces(
   // Update wave flow velocity
   this->ComputeWaveVel();
   ignition::math::Vector3d waveFlowVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveLinVel));
-  // ignition::math::Vector3d waveFlowAngVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveAngVel));
+  ignition::math::Vector3d waveFlowAngVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveAngVel));
   // std::cout << std::endl << waveFlowVel << std::endl << waveFlowAngVel << std::endl;
 
   // Transform the flow velocity to the BODY frame
@@ -409,9 +409,9 @@ void HMFossen::ApplyHydrodynamicForces(
   // Compute the relative velocity
   velRel = EigenStack(
     this->ToNED(linVel - flowVel - waveFlowVel),
-    // this->ToNED(angVel - waveFlowAngVel));
+    this->ToNED(angVel - waveFlowAngVel));
     // this->ToNED(linVel - flowVel),
-    this->ToNED(angVel));
+    // this->ToNED(angVel));
   // std::cout << linVel << " " << flowVel << " " << waveFlowVel << " " << angVel << " " << waveFlowAngVel << "\n";
 
   // Update added Coriolis matrix
