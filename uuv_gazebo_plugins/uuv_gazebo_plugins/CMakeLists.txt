@@ -1,13 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(uuv_gazebo_plugins)
 
-# Specify C++11 standard
-if(NOT "${CMAKE_VERSION}" VERSION_LESS "3.16")
-    set(CMAKE_CXX_STANDARD 17)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-else()
-    set(LOCAL_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-endif()
+# Specify C++17 standard
+add_definitions(-std=c++17)
 
 find_package(catkin REQUIRED COMPONENTS
     wave_gazebo_plugins
@@ -15,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
 find_package(Protobuf REQUIRED)
+find_package(DART REQUIRED)
 
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/msgs)
 
@@ -57,7 +53,8 @@ catkin_package(
 
 include_directories(${PROJECT_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_BINARY_DIR} # for generated messages
-                    ${Boost_INCLUDE_DIR}
+                    ${DART_INCLUDE_DIRS}
+                    ${Boost_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
                     ${GAZEBO_MSG_INCLUDE_DIRS}
                     ${EIGEN3_INCLUDE_DIRS})

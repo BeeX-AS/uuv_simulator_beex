@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(wave_gazebo_plugins)
 
 ###############################################################################
@@ -29,6 +29,7 @@ endif()
 # Other dependencies...
 
 find_package(catkin REQUIRED COMPONENTS gazebo_ros)
+find_package(Boost REQUIRED COMPONENTS thread)
 find_package(gazebo REQUIRED)
 find_package(Eigen3 REQUIRED)
 

@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(uuv_gazebo_ros_plugins)
 
 # Specify C++11 standard
-add_definitions(-std=c++11)
+add_definitions(-std=c++17)
 
 find_package(catkin REQUIRED COMPONENTS
   uuv_gazebo_plugins
@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   tf2
   gazebo_dev
+  DART
 )
 
 

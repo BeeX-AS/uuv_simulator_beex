@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(uuv_sensor_ros_plugins)
 
-add_definitions(-std=c++11)
+add_definitions(-std=c++17)
 
 # set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
@@ -97,7 +97,7 @@ include_directories(
   ${OGRE_INCLUDE_DIRS}
   ${OGRE_Paging_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS}
 )
 
 link_directories(

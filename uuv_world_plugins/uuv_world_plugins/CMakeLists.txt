@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(uuv_world_plugins)
 
-# Specify C++11 standard
-add_definitions(-std=c++11)
+# Specify C++17 standard
+add_definitions(-std=c++17)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -11,19 +11,20 @@ find_package(catkin REQUIRED COMPONENTS
 	gazebo_dev
 	gazebo_msgs)
 find_package(Boost REQUIRED)
+find_package(DART REQUIRED)
 
 catkin_package(
-	INCLUDE_DIRS include
-	LIBRARIES uuv_underwater_current_plugin
-	CATKIN_DEPENDS
-		gazebo_msgs
-		gazebo_dev
+  INCLUDE_DIRS include
+  LIBRARIES uuv_underwater_current_plugin
+  CATKIN_DEPENDS
+  gazebo_msgs
+  gazebo_dev
 )
 
 include_directories(
-	include
+  include
   ${catkin_INCLUDE_DIRS}
-	${Boost_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
 )
 
 link_directories(
@@ -48,7 +49,7 @@ target_link_libraries(uuv_underwater_current_plugin
 
 ## Mark executables and/or libraries for installation
 install(TARGETS
-		uuv_underwater_current_plugin
+  uuv_underwater_current_plugin
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
