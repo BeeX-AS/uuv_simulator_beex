@@ -10,7 +10,6 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
 find_package(Protobuf REQUIRED)
-find_package(DART REQUIRED)
 
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/msgs)
 
@@ -53,7 +52,6 @@ catkin_package(
 
 include_directories(${PROJECT_SOURCE_DIR}/include
                     ${CMAKE_CURRENT_BINARY_DIR} # for generated messages
-                    ${DART_INCLUDE_DIRS}
                     ${Boost_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
                     ${GAZEBO_MSG_INCLUDE_DIRS}

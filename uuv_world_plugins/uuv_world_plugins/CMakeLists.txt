@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
 	gazebo_dev
 	gazebo_msgs)
 find_package(Boost REQUIRED)
-find_package(DART REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
