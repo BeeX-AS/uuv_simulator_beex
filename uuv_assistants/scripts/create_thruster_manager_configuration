@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2016 The UUV Simulator Authors.
 # All rights reserved.
 #
@@ -19,7 +19,6 @@ import os
 import rospy
 import argparse
 import sys
-import shutil
 from rospkg import RosPack
 
 roslib.load_manifest('uuv_assistants')
@@ -39,7 +38,7 @@ if __name__ == '__main__':
 
     if args.output_dir is None:
         output_dir = args.robot_name + '_control'
-        print('Creating catking package %s for the thruster manager configuration' % output_dir)
+        print(f'Creating catking package {str(output_dir)} for the thruster manager configuration')
         if os.path.exists(output_dir):
             print('Catkin package already exists!')
             sys.exit(-1)
@@ -53,8 +52,8 @@ if __name__ == '__main__':
         output_dir = args.output_dir
 
     print('Create new catkin package for a UUV control configuration')
-    print('\tRobot name = ' + args.robot_name)
-    print('\tOutput directory = ' + output_dir)
+    print(f'\tRobot name = {args.robot_name}')
+    print(f'\tOutput directory = {str(output_dir)}')
 
     template_path = os.path.join(ROSPACK_INST.get_path('uuv_assistants'), 'templates', 'thruster_manager_config')
 
@@ -78,4 +77,4 @@ if __name__ == '__main__':
                         line = line.replace('$CATKIN_PACKAGE', output_dir)
                     output_file.write(line)
 
-    print('Thruster manager configuration <%s> create successfully' % output_dir)
+    print(f'Thruster manager configuration <{str(output_dir)}> create successfully')

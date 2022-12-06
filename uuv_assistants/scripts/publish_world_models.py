@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright (c) 2016 The UUV Simulator Authors.
 # All rights reserved.
 #
@@ -50,7 +50,7 @@ class WorldPublisher:
     def add_meshes(self, models):
         for model in models:
             if model in self._model_paths:
-                print('Model %s already exists' % model)
+                print(f'Model {str(model)} already exists')
                 continue
 
             new_model = dict()
@@ -86,10 +86,9 @@ class WorldPublisher:
                                                     prop.pose.orientation.z,
                                                     prop.pose.orientation.w]
                     else:
-                        print('Model %s not found in the current Gazebo scenario' % model)
+                        print(f'Model {str(model)} not found in the current Gazebo scenario')
                 else:
-                    print('Information about the model %s for the mesh %s could not be '
-                          'retrieved' % (model, models[model]['mesh']))
+                    print(f"Information about the model {str(model)} for the mesh {str(models[model]['mesh'])} could not be retrieved")
             elif 'plane' in models[model]:
                 new_model['plane'] = [1, 1, 1]
                 if 'plane' in models[model]:
@@ -101,7 +100,7 @@ class WorldPublisher:
                 continue
 
             self._model_paths[model] = new_model
-            print('New model being published: %s' % model)
+            print(f'New model being published: {str(model)}')
             print('\t Position: ' + str(self._model_paths[model]['position']))
             print('\t Orientation: ' + str(self._model_paths[model]['orientation']))
             print('\t Scale: ' + str(self._model_paths[model]['scale']))
