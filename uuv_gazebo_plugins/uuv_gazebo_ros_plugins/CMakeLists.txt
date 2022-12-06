@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   tf2
   gazebo_dev
-  DART
 )
 
 
