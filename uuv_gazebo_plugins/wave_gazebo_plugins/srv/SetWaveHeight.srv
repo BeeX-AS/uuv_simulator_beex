@@ -1,0 +1,4 @@
+float32 wave_height
+float32 horizontal_angle
+---
+bool success

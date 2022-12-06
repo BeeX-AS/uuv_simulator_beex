@@ -27,7 +27,7 @@
 
 #include <sdf/sdf.hh>
 
-#include "wave_gazebo_plugins/Utilities.hh"
+#include "Utilities.hh"
 
 // namespace asv
 // {

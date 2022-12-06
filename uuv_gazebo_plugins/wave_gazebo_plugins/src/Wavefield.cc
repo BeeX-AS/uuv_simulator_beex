@@ -28,10 +28,10 @@
 #include <ignition/math/Vector2.hh>
 #include <ignition/math/Vector3.hh>
 
-#include "wave_gazebo_plugins/Geometry.hh"
-#include "wave_gazebo_plugins/Physics.hh"
-#include "wave_gazebo_plugins/Utilities.hh"
-#include "wave_gazebo_plugins/Wavefield.hh"
+#include "Geometry.hh"
+#include "Physics.hh"
+#include "Utilities.hh"
+#include "Wavefield.hh"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -526,6 +526,14 @@ class WaveParametersPrivate
   /// \brief Recalculate all derived quantities from inputs.
   public: void Recalculate()
   {
+    // Update components
+    this->angularFrequencies.clear();
+    this->amplitudes.clear();
+    this->phases.clear();
+    this->wavenumbers.clear();
+    this->steepnesses.clear();
+    this->directions.clear();
+
     this->spread = std::max(1,std::min(2,this->spread));
     if (this->spread == 1){
       this->cdf_func = [](double x) { return (2 * x + sin(2 * x)) / 4; };
@@ -535,7 +543,7 @@ class WaveParametersPrivate
       this->pdf_func = [](double x) { return pow(cos(x),4); };
     }
 
-    if (this->height < 1e-2 or this->number == 0){
+    if (this->height < 1e-2 || this->number == 0){
       gzmsg << "No waves used "
             << "\n";
       return;
@@ -619,6 +627,21 @@ void WaveParameters::SetFromSDF(sdf::Element& _sdf)
   this->data->gamma = Utilities::SdfParamDouble(_sdf, "gamma", \
                                                 this->data->gamma);
   this->data->Recalculate();
+
+  if (!ros::isInitialized())
+  {
+    gzerr << "Not loading plugin since ROS has not been "
+          << "properly initialized.  Try starting gazebo with ros plugin:\n"
+          << "  gazebo -s libgazebo_ros_api_plugin.so\n";
+    return;
+  }
+
+  this->rosNode.reset(new ros::NodeHandle("wave_hydrodynamics"));
+
+  this->set_wave_height_srv =
+        this->rosNode->advertiseService(
+                        "set_current_velocity_model",
+                        &WaveParameters::UpdateWaveVelocity, this);
 }
 
 size_t WaveParameters::Number() const
@@ -749,6 +772,7 @@ void WaveParameters::SetGain(double _gain)
 void WaveParameters::SetHeight(double _height)
 {
   this->data->height = _height;
+  this->data->Recalculate();
 }
 
 void WaveParameters::SetDirection(const ignition::math::Vector2d& _direction)
@@ -791,7 +815,8 @@ WaveParameters::Direction_V() const
 void WaveParameters::DebugPrint() const
 {
   gzmsg << "Input Parameters:" << std::endl;
-  gzmsg << "model:     " << this->data->model << std::endl;
+  gzmsg << "model:      " << this->data->model << std::endl;
+  gzmsg << "height:     " << this->data->height << std::endl;
   gzmsg << "number:     " << this->data->number << std::endl;
   gzmsg << "scale:      " << this->data->scale << std::endl;
   gzmsg << "angle:      " << this->data->angle << std::endl;
@@ -823,6 +848,24 @@ void WaveParameters::DebugPrint() const
     gzmsg << d << "; ";
   }
   gzmsg << std::endl;
+}
+
+bool WaveParameters::UpdateWaveVelocity(wave_gazebo_plugins::SetWaveHeight::Request& _req, wave_gazebo_plugins::SetWaveHeight::Response& _res) {
+
+    if (this->data == nullptr) {
+        _res.success = false;
+        return true;
+    }
+
+    this->data->direction.Set(std::cos(_req.horizontal_angle), std::sin(_req.horizontal_angle));
+    this->data->height = std::max(0.0f, _req.wave_height);
+    this->data->Recalculate();
+
+    gzmsg << "Wave Height [m] = " << this->data->height << std::endl
+      << "Wave horizontal angle [rad] = " << _req.horizontal_angle << std::endl;
+    _res.success = true;
+
+    return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////

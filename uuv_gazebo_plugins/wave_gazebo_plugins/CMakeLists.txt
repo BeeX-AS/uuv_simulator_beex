@@ -28,13 +28,17 @@ endif()
 ###############################################################################
 # Other dependencies...
 
-find_package(catkin REQUIRED COMPONENTS gazebo_ros)
+find_package(catkin REQUIRED COMPONENTS gazebo_ros message_generation std_msgs roscpp)
+
 find_package(Boost REQUIRED COMPONENTS thread)
 find_package(gazebo REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 ############################################################################### 
 # Catkin...
+
+add_service_files(FILES SetWaveHeight.srv)
+generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package(
   INCLUDE_DIRS
@@ -44,6 +48,10 @@ catkin_package(
     WavefieldModelPlugin
     WavefieldVisualPlugin
     wavegauge_plugin
+  CATKIN_DEPENDS
+    roscpp
+    std_msgs
+    message_runtime
   DEPENDS
     gazebo_ros
 )
@@ -67,6 +75,7 @@ link_directories(
   ${IGNITION-MSGS_LIBRARY_DIRS}
   )
 
+
 ############################################################################### 
 # Libraries...
 
@@ -88,6 +97,7 @@ target_link_libraries(Hydrodynamics
   ${GAZEBO_LIBRARIES}
 )
 
+add_dependencies(Hydrodynamics ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_compile_options(Hydrodynamics PRIVATE "-Wno-unknown-pragmas")
 
 list(APPEND WAVE_GAZEBO_LIBRARIES_LIST Hydrodynamics)

@@ -35,6 +35,9 @@
 #include <random>
 #include <eigen3/Eigen/Dense>
 
+#include <ros/ros.h>
+#include <wave_gazebo_plugins/SetWaveHeight.h>
+
 namespace Eigen
 {
   /// \brief Definition of a 6x6 Eigen matrix
@@ -209,6 +212,11 @@ public: void DebugPrint() const;
 /// \internal
 /// \brief Pointer to the class private data.
 private: std::shared_ptr<WaveParametersPrivate> data;
+
+
+private: std::shared_ptr<ros::NodeHandle> rosNode;
+protected: ros::ServiceServer set_wave_height_srv;
+protected: bool UpdateWaveVelocity(wave_gazebo_plugins::SetWaveHeight::Request& _req, wave_gazebo_plugins::SetWaveHeight::Response& _res);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

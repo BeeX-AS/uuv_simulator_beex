@@ -21,10 +21,10 @@
 #include <gazebo/common/Events.hh>
 #include <ignition/math/Pose3.hh>
 
-#include "wave_gazebo_plugins/wavegauge_plugin.hh"
-#include "wave_gazebo_plugins/Wavefield.hh"
-#include "wave_gazebo_plugins/WavefieldEntity.hh"
-#include "wave_gazebo_plugins/WavefieldModelPlugin.hh"
+#include "wavegauge_plugin.hh"
+#include "Wavefield.hh"
+#include "WavefieldEntity.hh"
+#include "WavefieldModelPlugin.hh"
 
 // using namespace asv;
 using namespace gazebo;
@@ -75,22 +75,12 @@ void WaveguagePlugin::OnUpdate()
   {
     return;
   }
-  #if GAZEBO_MAJOR_VERSION >= 8
-    ignition::math::Pose3d modelPose = this->model->WorldPose();
-  #else
-    ignition::math::Pose3d modelPose = this->model->GetWorldPose().Ign();
-  #endif
+  ignition::math::Pose3d modelPose = this->model->WorldPose();
 
   // Compute the wave displacement at the model location
-  #if GAZEBO_MAJOR_VERSION >= 8
-    double waveHeightS = WavefieldSampler::ComputeDepthSimply(
+  double waveHeightS = WavefieldSampler::ComputeDepthSimply(
       *waveParams, modelPose.Pos(),
       this->model->GetWorld()->SimTime().Double());
-  #else
-    double waveHeightS = WavefieldSampler::ComputeDepthSimply(
-      *waveParams, modelPose.Pos(),
-      this->model->GetWorld()->GetSimTime().Double());
-  #endif
 
   // Add the mean water level
   waveHeightS += this->fluidLevel;

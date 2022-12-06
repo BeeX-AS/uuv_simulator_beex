@@ -24,7 +24,7 @@
 #include <gazebo/common/common.hh>
 #include <gazebo/rendering/rendering.hh>
 
-#include "wave_gazebo_plugins/Gazebo.hh"
+#include "Gazebo.hh"
 
 namespace gazebo
 {

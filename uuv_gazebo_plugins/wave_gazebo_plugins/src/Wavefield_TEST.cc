@@ -20,7 +20,7 @@
 #include <iostream>
 #include <string>
 
-#include "wave_gazebo_plugins/Wavefield.hh"
+#include "Wavefield.hh"
 
 // using namespace asv;
 

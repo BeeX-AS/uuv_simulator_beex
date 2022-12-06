@@ -27,6 +27,7 @@
 #include <ignition/math/Vector3.hh>
 #include <sdf/sdf.hh>
 
+
 namespace gazebo
 {
   /// \brief A plugin that sets the model height (z) to be the same
@@ -51,8 +52,7 @@ namespace gazebo
     public: WaveguagePlugin();
 
     // Documentation inherited.
-    public: virtual void Load(physics::ModelPtr _model,
-                              sdf::ElementPtr _sdf);
+    public: virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
 
     // Documentation inherited.
     public: virtual void Init();

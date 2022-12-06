@@ -24,10 +24,10 @@
 #include <gazebo/common/common.hh>
 #include <gazebo/physics/physics.hh>
 
-#include "wave_gazebo_plugins/WavefieldModelPlugin.hh"
-#include "wave_gazebo_plugins/Wavefield.hh"
-#include "wave_gazebo_plugins/WavefieldEntity.hh"
-#include "wave_gazebo_plugins/Utilities.hh"
+#include "WavefieldModelPlugin.hh"
+#include "Wavefield.hh"
+#include "WavefieldEntity.hh"
+#include "Utilities.hh"
 using namespace gazebo;
 
 // namespace asv
@@ -134,11 +134,7 @@ using namespace gazebo;
   void WavefieldModelPlugin::Reset()
   {
     // Reset time
-    #if GAZEBO_MAJOR_VERSION >= 8
-      this->data->prevTime = this->data->world->SimTime();
-    #else
-      this->data->prevTime = this->data->world->GetSimTime();
-    #endif
+    this->data->prevTime = this->data->world->SimTime();
   }
 
   void WavefieldModelPlugin::OnUpdate()
@@ -152,11 +148,7 @@ using namespace gazebo;
     {
       // Throttle update [30 FPS by default]
       auto updatePeriod = 1.0/this->data->updateRate;
-      #if GAZEBO_MAJOR_VERSION >= 8
-        auto currentTime = this->data->world->SimTime();
-      #else
-        auto currentTime = this->data->world->GetSimTime();
-      #endif
+      auto currentTime = this->data->world->SimTime();
 
       if ((currentTime - this->data->prevTime).Double() < updatePeriod)
       {
@@ -174,11 +166,8 @@ using namespace gazebo;
     const std::string& _waveModelName)
   {
     GZ_ASSERT(_world != nullptr, "World is null");
-    #if GAZEBO_MAJOR_VERSION >= 8
-      physics::ModelPtr wavefieldModel = _world->ModelByName(_waveModelName);
-    #else
-      physics::ModelPtr wavefieldModel = _world->GetModel(_waveModelName);
-    #endif
+    physics::ModelPtr wavefieldModel = _world->ModelByName(_waveModelName);
+
     if (wavefieldModel == nullptr)
     {
       gzerr << "No Wavefield Model found with name '"
@@ -189,8 +178,7 @@ using namespace gazebo;
     std::string wavefieldEntityName(WavefieldEntity::MakeName(_waveModelName));
 
     physics::BasePtr base = wavefieldModel->GetChild(wavefieldEntityName);
-    boost::shared_ptr<WavefieldEntity> wavefieldEntity
-      = boost::dynamic_pointer_cast<WavefieldEntity>(base);
+    boost::shared_ptr<WavefieldEntity> wavefieldEntity = boost::dynamic_pointer_cast<WavefieldEntity>(base);
     if (wavefieldEntity == nullptr)
     {
       gzerr << "Wavefield Entity is null: "
