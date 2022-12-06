@@ -24,10 +24,10 @@
 #include <gazebo/common/common.hh>
 #include <gazebo/physics/physics.hh>
 
-#include "WavefieldModelPlugin.hh"
-#include "Wavefield.hh"
-#include "WavefieldEntity.hh"
-#include "Utilities.hh"
+#include <wave_gazebo_plugins/WavefieldModelPlugin.hh>
+#include <wave_gazebo_plugins/Wavefield.hh>
+#include <wave_gazebo_plugins/WavefieldEntity.hh>
+#include <wave_gazebo_plugins/Utilities.hh>
 using namespace gazebo;
 
 // namespace asv

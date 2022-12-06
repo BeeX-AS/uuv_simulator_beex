@@ -21,7 +21,7 @@
 #include <ignition/math/Vector2.hh>
 #include <ignition/math/Vector3.hh>
 
-#include "Geometry.hh"
+#include <wave_gazebo_plugins/Geometry.hh>
 
 /* The version of ignition math in Ubuntu Xenial is 2.2.3 and lacks of
  * some features added after that version in the 2.x series */

@@ -21,10 +21,10 @@
 #include <gazebo/common/Events.hh>
 #include <ignition/math/Pose3.hh>
 
-#include "wavegauge_plugin.hh"
-#include "Wavefield.hh"
-#include "WavefieldEntity.hh"
-#include "WavefieldModelPlugin.hh"
+#include <wave_gazebo_plugins/wavegauge_plugin.hh>
+#include <wave_gazebo_plugins/Wavefield.hh>
+#include <wave_gazebo_plugins/WavefieldEntity.hh>
+#include <wave_gazebo_plugins/WavefieldModelPlugin.hh>
 
 // using namespace asv;
 using namespace gazebo;

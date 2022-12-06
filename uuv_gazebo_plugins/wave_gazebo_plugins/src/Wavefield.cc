@@ -28,10 +28,10 @@
 #include <ignition/math/Vector2.hh>
 #include <ignition/math/Vector3.hh>
 
-#include "Geometry.hh"
-#include "Physics.hh"
-#include "Utilities.hh"
-#include "Wavefield.hh"
+#include <wave_gazebo_plugins/Geometry.hh>
+#include <wave_gazebo_plugins/Physics.hh>
+#include <wave_gazebo_plugins/Utilities.hh>
+#include <wave_gazebo_plugins/Wavefield.hh>
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -15,7 +15,7 @@
  *
 */
 
-#include "PhysicalConstants.hh"
+#include <wave_gazebo_plugins/PhysicalConstants.hh>
 
 // namespace asv
 // {

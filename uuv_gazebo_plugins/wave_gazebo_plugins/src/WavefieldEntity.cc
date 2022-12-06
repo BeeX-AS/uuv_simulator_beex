@@ -23,9 +23,9 @@
 
 #include <ignition/math/Vector2.hh>
 
-#include "WavefieldEntity.hh"
-#include "Wavefield.hh"
-#include "Utilities.hh"
+#include <wave_gazebo_plugins/WavefieldEntity.hh>
+#include <wave_gazebo_plugins/Wavefield.hh>
+#include <wave_gazebo_plugins/Utilities.hh>
 
 using namespace gazebo;
 using namespace common;

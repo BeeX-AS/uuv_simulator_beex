@@ -39,10 +39,10 @@
 #include "gazebo/rendering/Camera.hh"
 #include "gazebo/rendering/UserCamera.hh"
 
-#include "WavefieldVisualPlugin.hh"
-#include "Gazebo.hh"
-#include "Wavefield.hh"
-#include "Utilities.hh"
+#include <wave_gazebo_plugins/WavefieldVisualPlugin.hh>
+#include <wave_gazebo_plugins/Gazebo.hh>
+#include <wave_gazebo_plugins/Wavefield.hh>
+#include <wave_gazebo_plugins/Utilities.hh>
 
 using namespace gazebo;
 

@@ -17,8 +17,8 @@
 
 #include <cmath>
 
-#include "Physics.hh"
-#include "PhysicalConstants.hh"
+#include <wave_gazebo_plugins/Physics.hh>
+#include <wave_gazebo_plugins/PhysicalConstants.hh>
 
 // namespace asv
 // {
