@@ -640,7 +640,7 @@ void WaveParameters::SetFromSDF(sdf::Element& _sdf)
 
   this->set_wave_height_srv =
         this->rosNode->advertiseService(
-                        "set_current_velocity_model",
+                        "set_wave_velocity",
                         &WaveParameters::UpdateWaveVelocity, this);
 }
 
