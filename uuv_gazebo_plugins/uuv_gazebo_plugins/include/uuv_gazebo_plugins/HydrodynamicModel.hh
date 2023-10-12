@@ -37,9 +37,9 @@
 #include <uuv_gazebo_plugins/Def.hh>
 #include <uuv_gazebo_plugins/BuoyantObject.hh>
 
-#include <wave_gazebo_plugins/Wavefield.hh>
-#include <wave_gazebo_plugins/WavefieldEntity.hh>
-#include <wave_gazebo_plugins/WavefieldModelPlugin.hh>
+#include <asv_wave_sim_gazebo_plugins/Wavefield.hh>
+#include <asv_wave_sim_gazebo_plugins/WavefieldEntity.hh>
+#include <asv_wave_sim_gazebo_plugins/WavefieldModelPlugin.hh>
 
 namespace gazebo
 {
@@ -253,7 +253,7 @@ class HMFossen : public HydrodynamicModel
   protected: std::string waveModelName;
 
   /// \brief The wave parameters.
-  protected: std::shared_ptr<const WaveParameters> waveParams;
+  protected: std::shared_ptr<const asv::WaveParameters> waveParams;
 
   /// \brief Applies wave force on link
   public: void ApplyWaveForce();

@@ -722,7 +722,7 @@ void HMFossen::ComputeWaveVel()
     {
       gzmsg << "usv_gazebo_dynamics_plugin: waveParams is null. "
             << "Trying to get wave parameters from ocean model" << std::endl;
-      this->waveParams = WavefieldModelPlugin::GetWaveParams(
+      this->waveParams = asv::WavefieldModelPlugin::GetWaveParams(
           this->link->GetWorld(), this->waveModelName);
     }
 
