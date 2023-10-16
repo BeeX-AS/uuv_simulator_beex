@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /// \file HydrodynamicsPlugin.hh
-/// \brief A Gazebo model plugin to manage hydrodynamics calculations
+/// \brief A Gazebo model plugin to manage wave_hydrodynamics calculations
 /// for a buoyant object.  
 
 #ifndef _ASV_WAVE_SIM_GAZEBO_PLUGINS_HYDRODYNAMICS_PLUGIN_HH_
@@ -39,7 +39,7 @@ namespace asv
   /// Add the SDF for the plugin to the <model> element of your model. 
   /// 
   /// /code
-  /// <plugin name="hydrodynamics" filename="libHydrodynamicsPlugin.so">
+  /// <plugin name="wave_hydrodynamics" filename="libHydrodynamicsPlugin.so">
   ///   <!-- Wave Model -->
   ///   <wave_model>ocean_waves</wave_model>
   ///
@@ -75,7 +75,7 @@ namespace asv
   ///
   /// # Subscribed Topics
   ///
-  /// 1. ~/hydrodynamics (gazebo::msgs::Param_V)
+  /// 1. ~/wave_hydrodynamics (gazebo::msgs::Param_V)
   ///
   /// # Published Topics
   ///
@@ -184,7 +184,7 @@ namespace asv
     private: void FiniUnderwaterSurfaceMarkers();
 
     /// internal
-    /// \brief Callback for gztopic "~/hydrodynamics".
+    /// \brief Callback for gztopic "~/wave_hydrodynamics".
     ///
     /// \param[in] _msg Hydrodynamics parameters message.
     private: void OnHydrodynamicsMsg(ConstParam_VPtr &_msg);

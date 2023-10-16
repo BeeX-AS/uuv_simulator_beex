@@ -161,9 +161,9 @@ TEST(Hydrodynamics, BuoyancyUnitBox)
 
   // Hydrodynamics
   std::shared_ptr<HydrodynamicsParameters> hydroParams = std::make_shared<HydrodynamicsParameters>();
-  Hydrodynamics hydrodynamics(hydroParams, linkMesh, wavefieldSampler);
-  hydrodynamics.Update(wavefieldSampler, linkPose, CGAL::NULL_VECTOR, CGAL::NULL_VECTOR);
-  Vector3 force = hydrodynamics.Force();
+  Hydrodynamics wave_hydrodynamics(hydroParams, linkMesh, wavefieldSampler);
+  wave_hydrodynamics.Update(wavefieldSampler, linkPose, CGAL::NULL_VECTOR, CGAL::NULL_VECTOR);
+  Vector3 force = wave_hydrodynamics.Force();
 
   double h = 0.5;
   double A = 1.0;
@@ -199,9 +199,9 @@ TEST(Hydrodynamics, Buoyancy10x4x2Box)
   
   // Hydrodynamics
   std::shared_ptr<HydrodynamicsParameters> hydroParams = std::make_shared<HydrodynamicsParameters>();
-  Hydrodynamics hydrodynamics(hydroParams, linkMesh, wavefieldSampler);
-  hydrodynamics.Update(wavefieldSampler, linkPose, CGAL::NULL_VECTOR, CGAL::NULL_VECTOR);
-  Vector3 force =  hydrodynamics.Force();
+  Hydrodynamics wave_hydrodynamics(hydroParams, linkMesh, wavefieldSampler);
+  wave_hydrodynamics.Update(wavefieldSampler, linkPose, CGAL::NULL_VECTOR, CGAL::NULL_VECTOR);
+  Vector3 force =  wave_hydrodynamics.Force();
   double h = 0.5 * 2.0;
   double A = 10.0 * 4.0;
   double f = - PhysicalConstants::WaterDensity() * PhysicalConstants::Gravity() * A * h;
@@ -222,9 +222,9 @@ TEST(Hydrodynamics, Buoyancy10x4x2Box)
   //   }
 
   //   // Hydrodynamics
-  //   hydrodynamics.UpdateSubmergedTriangles();
-  //   hydrodynamics.ComputeBuoyancyForce();
-  //   force =  hydrodynamics.BuoyancyForce();
+  //   wave_hydrodynamics.UpdateSubmergedTriangles();
+  //   wave_hydrodynamics.ComputeBuoyancyForce();
+  //   force =  wave_hydrodynamics.BuoyancyForce();
   //   std::cout << "test: " << force << std::endl;    
   //   std::cout << "chck: " << Vector3d(0, 0, f) << std::endl;    
   // }
@@ -241,9 +241,9 @@ TEST(Hydrodynamics, Buoyancy10x4x2Box)
   //   }
 
   //   // Hydrodynamics
-  //   hydrodynamics.UpdateSubmergedTriangles();
-  //   hydrodynamics.ComputeBuoyancyForce();
-  //   force =  hydrodynamics.BuoyancyForce();
+  //   wave_hydrodynamics.UpdateSubmergedTriangles();
+  //   wave_hydrodynamics.ComputeBuoyancyForce();
+  //   force =  wave_hydrodynamics.BuoyancyForce();
   //   std::cout << "test: " << force << std::endl;    
   //   std::cout << "chck: " << Vector3d(0, 0, f) << std::endl;    
   // }
@@ -260,9 +260,9 @@ TEST(Hydrodynamics, Buoyancy10x4x2Box)
   //   }
 
   //   // Hydrodynamics
-  //   hydrodynamics.UpdateSubmergedTriangles();
-  //   hydrodynamics.ComputeBuoyancyForce();
-  //   force =  hydrodynamics.BuoyancyForce();
+  //   wave_hydrodynamics.UpdateSubmergedTriangles();
+  //   wave_hydrodynamics.ComputeBuoyancyForce();
+  //   force =  wave_hydrodynamics.BuoyancyForce();
   //   std::cout << "test: " << force << std::endl;    
   //   std::cout << "chck: " << Vector3d(0, 0, f) << std::endl;    
 

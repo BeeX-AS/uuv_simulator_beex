@@ -196,7 +196,7 @@ namespace asv
   /// \brief Class to hold private data for HydrodynamicsParameters.
   class HydrodynamicsParametersPrivate;
 
-  /// \brief A class to manage the parameters used in hydrodynamics calculations.
+  /// \brief A class to manage the parameters used in wave_hydrodynamics calculations.
   class HydrodynamicsParameters
   {
     /// \brief Destructor.
@@ -249,7 +249,7 @@ namespace asv
 
     /// \brief Set the parameters from a message.
     ///
-    /// \param[in] _msg   The message containing the hydrodynamics parameters.
+    /// \param[in] _msg   The message containing the wave_hydrodynamics parameters.
     public: void SetFromMsg(const gazebo::msgs::Param_V& _msg);
 
     /// \brief Set parameters from a SDF tree.
@@ -257,7 +257,7 @@ namespace asv
     /// \param[in] _sdf   A reference to a SDF element.
     public: void SetFromSDF(sdf::Element& _sdf);
 
-    /// \brief Print a summary of the hydrodynamics parameters to the gzmsg stream.
+    /// \brief Print a summary of the wave_hydrodynamics parameters to the gzmsg stream.
     public: void DebugPrint() const;
 
     /// \internal
@@ -269,19 +269,19 @@ namespace asv
 // Hydrodynamics
 
   /// \internal
-  /// \brief Class to hold triangle data for hydrodynamics calculations.
+  /// \brief Class to hold triangle data for wave_hydrodynamics calculations.
   class TriangleProperties;
 
   /// \internal
   /// \brief Class to hold private data for Hydrodynamics.
   class HydrodynamicsPrivate;
 
-  /// \brief A class to manage hydrodynamics calculation for a rigid body defined by a mesh.
+  /// \brief A class to manage wave_hydrodynamics calculation for a rigid body defined by a mesh.
   class Hydrodynamics
   { 
     /// \brief Constructor
     ///
-    /// \param[in] _params            The hydrodynamics parameters.
+    /// \param[in] _params            The wave_hydrodynamics parameters.
     /// \param[in] _linkMesh          The surface mesh for the rigid body.
     /// \param[in] _wavefieldSampler  An object for sampling the wave field.
     public: Hydrodynamics(

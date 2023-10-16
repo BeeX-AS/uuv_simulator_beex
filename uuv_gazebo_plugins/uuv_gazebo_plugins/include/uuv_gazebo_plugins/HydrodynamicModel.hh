@@ -253,13 +253,13 @@ class HMFossen : public HydrodynamicModel
   protected: std::string waveModelName;
 
   /// \brief The wave parameters.
-  protected: std::shared_ptr<const asv::WaveParameters> waveParams;
+  // protected: std::shared_ptr<const asv::WaveParameters> waveParams;
 
   /// \brief Applies wave force on link
-  public: void ApplyWaveForce();
+  // public: void ApplyWaveForce();
 
   /// \brief Computes the wave velocities in the world frame
-  public: void ComputeWaveVel();
+  // public: void ComputeWaveVel();
 
   /// \brief Wave linear velocity
   protected: Eigen::Vector3d WaveLinVel = Eigen::Vector3d::Zero();

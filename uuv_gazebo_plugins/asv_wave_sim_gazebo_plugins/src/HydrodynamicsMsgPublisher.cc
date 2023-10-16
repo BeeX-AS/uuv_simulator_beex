@@ -71,12 +71,12 @@ int main(int _argc, char **_argv)
   {
     // Copyright notice.
     std::cout
-      << "ASV Wave Simulator: hydrodynamics parameter publisher.\n"
+      << "ASV Wave Simulator: wave_hydrodynamics parameter publisher.\n"
       << "Copyright (C) 2019  Rhys Mainwaring.\n"
       << "Released under the GNU General Public License.\n\n";
 
     // Program options
-    po::options_description options("Publish hydrodynamics parameters to gztopic \"~/<model>/hydrodynamics\"");
+    po::options_description options("Publish wave_hydrodynamics parameters to gztopic \"~/<model>/wave_hydrodynamics\"");
 
     options.add_options()
       ("help,h", 
@@ -144,7 +144,7 @@ int main(int _argc, char **_argv)
     {
       topic.append("/").append(modelName);
     }
-    topic.append("/hydrodynamics");
+    topic.append("/wave_hydrodynamics");
     transport::PublisherPtr hydroPub =
       node->Advertise<gazebo::msgs::Param_V>(topic);
 

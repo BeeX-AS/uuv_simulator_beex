@@ -282,7 +282,7 @@ namespace asv
 // HydrodynamicsLinkData
 
   /// \internal
-  /// \brief A class to hold data required for hydrodynamics calculations
+  /// \brief A class to hold data required for wave_hydrodynamics calculations
   /// for each link in a model.
   class HydrodynamicsLinkData
   {
@@ -298,8 +298,8 @@ namespace asv
     /// \brief The transformed meshes for this link.
     public: std::vector<std::shared_ptr<Mesh>> linkMeshes;
 
-    /// \brief Objects to compute the hydrodynamics forces for each link mesh.
-    public: std::vector<std::shared_ptr<Hydrodynamics>> hydrodynamics;
+    /// \brief Objects to compute the wave_hydrodynamics forces for each link mesh.
+    public: std::vector<std::shared_ptr<Hydrodynamics>> wave_hydrodynamics;
 
     /// \brief Marker messages for the water patch.
     public: ignition::msgs::Marker waterPatchMsg;
@@ -360,7 +360,7 @@ namespace asv
     /// \brief Gazebo transport node.
     public: transport::NodePtr gzNode;
 
-    /// \brief Subscribe to gztopic "~/hydrodynamics".
+    /// \brief Subscribe to gztopic "~/wave_hydrodynamics".
     public: transport::SubscriberPtr hydroSub;
   };
 
@@ -381,7 +381,7 @@ namespace asv
   void HydrodynamicsPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
   {
     // @DEBUG_INFO
-    // gzmsg << "Load HydrodynamicsPlugin" << std::endl;
+    gzmsg << "Load HydrodynamicsPlugin" << std::endl;
 
     GZ_ASSERT(_model != nullptr, "Invalid parameter _model");
     GZ_ASSERT(_sdf   != nullptr, "Invalid parameter _sdf");
@@ -397,7 +397,7 @@ namespace asv
 
     // Subscribers
     this->data->hydroSub = this->data->gzNode->Subscribe(
-      "~/hydrodynamics", &HydrodynamicsPlugin::OnHydrodynamicsMsg, this);
+      "~/wave_hydrodynamics", &HydrodynamicsPlugin::OnHydrodynamicsMsg, this);
 
     // Bind the update callback to the world update event 
     this->data->updateConnection = event::Events::ConnectWorldUpdateBegin(
@@ -463,34 +463,34 @@ namespace asv
         // Update link mesh
         ApplyPose(linkPose, *hd->initLinkMeshes[j], *hd->linkMeshes[j]);
         
-        // Update hydrodynamics
-        hd->hydrodynamics[j]->Update(
+        // Update wave_hydrodynamics
+        hd->wave_hydrodynamics[j]->Update(
           hd->wavefieldSampler, linkCoMPose, linVelocity, angVelocity);
 
         // Apply forces to the Link
-        auto force = ToIgn(hd->hydrodynamics[j]->Force());
+        auto force = ToIgn(hd->wave_hydrodynamics[j]->Force());
         if (force.IsFinite()) 
         {
           hd->link->AddForce(force);
         }
 
         // Apply torques to the link
-        auto torque = ToIgn(hd->hydrodynamics[j]->Torque());
+        auto torque = ToIgn(hd->wave_hydrodynamics[j]->Torque());
         if (torque.IsFinite()) 
         {
           hd->link->AddTorque(torque);
         }
 
         // Info for Markers
-        nSubTri += hd->hydrodynamics[j]->GetSubmergedTriangles().size();
+        nSubTri += hd->wave_hydrodynamics[j]->GetSubmergedTriangles().size();
 
         // @DEBUG_INFO
-        // gzmsg << "Link:         " << hd->link->GetName() << std::endl;
-        // gzmsg << "Position:     " << linkPose.Pos() << std::endl;
-        // gzmsg << "Rotation:     " << linkPose.Rot().Euler() << std::endl;
-        // gzmsg << "SubTriCount:  " << nSubTri << std::endl;
-        // gzmsg << "Force:        " << force << std::endl;
-        // gzmsg << "Torque:       " << torque << std::endl;
+        gzmsg << "Link:         " << hd->link->GetName() << std::endl;
+        gzmsg << "Position:     " << linkPose.Pos() << std::endl;
+        gzmsg << "Rotation:     " << linkPose.Rot().Euler() << std::endl;
+        gzmsg << "SubTriCount:  " << nSubTri << std::endl;
+        gzmsg << "Force:        " << force << std::endl;
+        gzmsg << "Torque:       " << torque << std::endl << std::endl;
       }
     }
   }
@@ -553,13 +553,13 @@ namespace asv
       for (size_t j=0; j<hd->linkMeshes.size(); ++j)
       {
         hd->waterlineMsgs[j].mutable_point()->Clear();
-        if (hd->hydrodynamics[j]->GetWaterline().empty())
+        if (hd->wave_hydrodynamics[j]->GetWaterline().empty())
         {
           // @TODO workaround. The previous marker is not cleared if a cleared point list is published.
           ignition::msgs::Set(hd->waterlineMsgs[j].add_point(), ignition::math::Vector3d::Zero);
           ignition::msgs::Set(hd->waterlineMsgs[j].add_point(), ignition::math::Vector3d::Zero);
         }
-        for (auto&& line : hd->hydrodynamics[j]->GetWaterline())
+        for (auto&& line : hd->wave_hydrodynamics[j]->GetWaterline())
         {
           ignition::msgs::Set(hd->waterlineMsgs[j].add_point(), ToIgn(line.point(0)));
           ignition::msgs::Set(hd->waterlineMsgs[j].add_point(), ToIgn(line.point(1)));
@@ -578,13 +578,13 @@ namespace asv
       for (size_t j=0; j<hd->linkMeshes.size(); ++j)
       {
         hd->underwaterSurfaceMsgs[j].mutable_point()->Clear();
-        if (hd->hydrodynamics[j]->GetSubmergedTriangles().empty())
+        if (hd->wave_hydrodynamics[j]->GetSubmergedTriangles().empty())
         {
           ignition::msgs::Set(hd->underwaterSurfaceMsgs[j].add_point(), ignition::math::Vector3d::Zero);
           ignition::msgs::Set(hd->underwaterSurfaceMsgs[j].add_point(), ignition::math::Vector3d::Zero);
           ignition::msgs::Set(hd->underwaterSurfaceMsgs[j].add_point(), ignition::math::Vector3d::Zero);
         }
-        for (auto&& tri : hd->hydrodynamics[j]->GetSubmergedTriangles())
+        for (auto&& tri : hd->wave_hydrodynamics[j]->GetSubmergedTriangles())
         {
           ignition::msgs::Set(hd->underwaterSurfaceMsgs[j].add_point(), ToIgn(tri[0]));
           ignition::msgs::Set(hd->underwaterSurfaceMsgs[j].add_point(), ToIgn(tri[1]));
@@ -598,7 +598,7 @@ namespace asv
   void HydrodynamicsPlugin::Init()
   {
     // @DEBUG_INFO
-    // gzmsg << "Init HydrodynamicsPlugin" << std::endl;
+    gzmsg << "Init HydrodynamicsPlugin" << std::endl;
     this->HydrodynamicsPlugin::InitPhysics();
     this->HydrodynamicsPlugin::InitMarkers();
   }
@@ -620,23 +620,28 @@ namespace asv
     std::vector<physics::LinkPtr> links;
     std::vector<std::vector<std::shared_ptr<Mesh>>> meshes;
     CreateCollisionMeshes(this->data->model, links, meshes);
+    gzmsg << "modelName:  " << modelName << std::endl;
     gzmsg << "links:  " << links.size() << std::endl;
     gzmsg << "meshes: " << meshes.size() << std::endl;
 
     for (size_t i=0; i<links.size(); ++i)
     {
+      if (i > 0) {
+        continue;
+      }
       // Create storage
       size_t meshCount = meshes[i].size();
       std::shared_ptr<HydrodynamicsLinkData> hd(new HydrodynamicsLinkData);
       this->data->hydroData.push_back(hd);
       hd->initLinkMeshes.resize(meshCount);
       hd->linkMeshes.resize(meshCount);
-      hd->hydrodynamics.resize(meshCount);
+      hd->wave_hydrodynamics.resize(meshCount);
       hd->waterlineMsgs.resize(meshCount);
       hd->underwaterSurfaceMsgs.resize(meshCount);
 
       // Wavefield and Link
       hd->link = links[i];
+      gzmsg << "link cout:" << int(i) << std::endl;
 
       // The link pose is required for the water patch, the CoM pose for dynamics.
       ignition::math::Pose3d linkPose = hd->link->WorldPose();
@@ -646,8 +651,10 @@ namespace asv
       auto boundingBox = hd->link->CollisionBoundingBox();
       double patchSize = 2.2 * boundingBox.Size().Length();
       gzmsg << "Water patch size: " << patchSize << std::endl;
+      if(patchSize <= 0.0)
+        patchSize = 0.0000001;
       std::shared_ptr<Grid> initWaterPatch(new Grid({patchSize, patchSize}, { 4, 4 }));
-
+      gzmsg << "Water patch size debug" << std::endl;
       // WavefieldSampler - this is updated by the pose of the link (not the CoM).
       hd->wavefieldSampler.reset(new WavefieldSampler(
         this->data->wavefield, initWaterPatch));
@@ -674,14 +681,16 @@ namespace asv
         ApplyPose(linkPose, *hd->initLinkMeshes[j], *hd->linkMeshes[j]);
 
         // Initialise Hydrodynamics
-        hd->hydrodynamics[j].reset(
+        hd->wave_hydrodynamics[j].reset(
           new Hydrodynamics(
             this->data->hydroParams,
             hd->linkMeshes[j],
             hd->wavefieldSampler));
-        hd->hydrodynamics[j]->Update(
+        hd->wave_hydrodynamics[j]->Update(
           hd->wavefieldSampler, linkCoMPose, linVelocity, angVelocity);
       }
+      
+      gzmsg << "end of link loop" << std::endl;
     }
   }
 
@@ -894,7 +903,7 @@ namespace asv
   {
     GZ_ASSERT(_msg != nullptr, "Hydrodynamics message must not be null");
 
-    // Update hydrodynamics params
+    // Update wave_hydrodynamics params
     auto& hydroParams = *this->data->hydroParams;
     hydroParams.SetFromMsg(*_msg);
 

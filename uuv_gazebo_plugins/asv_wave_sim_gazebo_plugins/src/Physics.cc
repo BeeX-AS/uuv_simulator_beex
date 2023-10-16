@@ -602,7 +602,7 @@ namespace asv
 
   class HydrodynamicsPrivate
   {
-    /// \brief The hydrodynamics parameters. 
+    /// \brief The wave_hydrodynamics parameters. 
     public: std::shared_ptr<const HydrodynamicsParameters> params;
 
     /// \brief The mesh of the rigid body described by this model link.

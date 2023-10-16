@@ -362,11 +362,11 @@ HMFossen::HMFossen(sdf::ElementPtr _sdf,
   this->quadDampCoef = quadDampCoef;
 
   // Capture the wave model
-  if (_sdf->HasElement("wave_model"))
-  {
-    this->waveModelName = _sdf->Get<std::string>("wave_model");
-  }
-  this->waveParams = nullptr;
+  // if (_sdf->HasElement("wave_model"))
+  // {
+  //   this->waveModelName = _sdf->Get<std::string>("wave_model");
+  // }
+  // this->waveParams = nullptr;
 
 }
 
@@ -395,9 +395,9 @@ void HMFossen::ApplyHydrodynamicForces(
 #endif
 
   // Update wave flow velocity
-  this->ComputeWaveVel();
-  ignition::math::Vector3d waveFlowVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveLinVel));
-  ignition::math::Vector3d waveFlowAngVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveAngVel));
+  // this->ComputeWaveVel();
+  // ignition::math::Vector3d waveFlowVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveLinVel));
+  // ignition::math::Vector3d waveFlowAngVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveAngVel));
   // std::cout << std::endl << waveFlowVel << std::endl << waveFlowAngVel << std::endl;
 
   // Transform the flow velocity to the BODY frame
@@ -408,10 +408,10 @@ void HMFossen::ApplyHydrodynamicForces(
   Eigen::Vector6d velRel, acc;
   // Compute the relative velocity
   velRel = EigenStack(
-    this->ToNED(linVel - flowVel - waveFlowVel),
-    this->ToNED(angVel - waveFlowAngVel));
-    // this->ToNED(linVel - flowVel),
-    // this->ToNED(angVel));
+    // this->ToNED(linVel - flowVel - waveFlowVel),
+    // this->ToNED(angVel - waveFlowAngVel));
+    this->ToNED(linVel - flowVel),
+    this->ToNED(angVel));
   // std::cout << linVel << " " << flowVel << " " << waveFlowVel << " " << angVel << " " << waveFlowAngVel << "\n";
 
   // Update added Coriolis matrix
@@ -712,43 +712,43 @@ void HMFossen::Print(std::string _paramName, std::string _message)
 }
 
 /////////////////////////////////////////////////
-void HMFossen::ComputeWaveVel()
-{
-  // update wave height if wave model specified
-  if (!this->waveModelName.empty())
-  {
-    // If we haven't yet, retrieve the wave parameters from ocean model plugin.
-    if (!this->waveParams)
-    {
-      gzmsg << "usv_gazebo_dynamics_plugin: waveParams is null. "
-            << "Trying to get wave parameters from ocean model" << std::endl;
-      this->waveParams = asv::WavefieldModelPlugin::GetWaveParams(
-          this->link->GetWorld(), this->waveModelName);
-    }
+// void HMFossen::ComputeWaveVel()
+// {
+//   // update wave height if wave model specified
+//   if (!this->waveModelName.empty())
+//   {
+//     // If we haven't yet, retrieve the wave parameters from ocean model plugin.
+//     // if (!this->waveParams)
+//     // {
+//     //   gzmsg << "usv_gazebo_dynamics_plugin: waveParams is null. "
+//     //         << "Trying to get wave parameters from ocean model" << std::endl;
+//     //   this->waveParams = asv::WavefieldModelPlugin::GetWaveParams(
+//     //       this->link->GetWorld(), this->waveModelName);
+//     // }
 
-    #if GAZEBO_MAJOR_VERSION >= 8
-      double simTime = this->link->GetWorld()->SimTime().Double();
-    #else
-      double simTime = this->link->GetWorld()->GetSimTime().Double();
-    #endif
+//     #if GAZEBO_MAJOR_VERSION >= 8
+//       double simTime = this->link->GetWorld()->SimTime().Double();
+//     #else
+//       double simTime = this->link->GetWorld()->GetSimTime().Double();
+//     #endif
 
-    // get wave height for each link
-    // for (auto& link : this->linkMap)
-    // {
-      // auto linkPtr = link.second;
-      auto linkPtr = this->link;
-      #if GAZEBO_MAJOR_VERSION >= 8
-        ignition::math::Pose3d linkFrame = linkPtr->WorldPose();
-      #else
-        ignition::math::Pose3d linkFrame = linkPtr->GetWorldPose().Ign();
-      #endif
+//     // get wave height for each link
+//     // for (auto& link : this->linkMap)
+//     // {
+//       // auto linkPtr = link.second;
+//       auto linkPtr = this->link;
+//       #if GAZEBO_MAJOR_VERSION >= 8
+//         ignition::math::Pose3d linkFrame = linkPtr->WorldPose();
+//       #else
+//         ignition::math::Pose3d linkFrame = linkPtr->GetWorldPose().Ign();
+//       #endif
 
-      // Compute the wave displacement at the centre of the link frame.
-      // Wave field height at the link, relative to the mean water level.
-      WavefieldSampler::ComputeVelocities(
-          *waveParams, this->link->WorldPose().Pos(), this->WaveLinVel, this->WaveAngVel, simTime);
-  }
-}
+//       // Compute the wave displacement at the centre of the link frame.
+//       // Wave field height at the link, relative to the mean water level.
+//       WavefieldSampler::ComputeVelocities(
+//           *waveParams, this->link->WorldPose().Pos(), this->WaveLinVel, this->WaveAngVel, simTime);
+//   }
+// }
 
 //////////////////////////////////////////////////////////////////////////
 // Hydrodynamic model for a sphere

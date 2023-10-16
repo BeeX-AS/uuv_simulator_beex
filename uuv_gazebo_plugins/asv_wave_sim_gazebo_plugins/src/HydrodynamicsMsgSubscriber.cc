@@ -40,11 +40,11 @@ void signal_handler(int _signal)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-/// \brief Callback for gztopic "~/hydrodynamics".
+/// \brief Callback for gztopic "~/wave_hydrodynamics".
 ///
 void OnHydrodynamicsMsg(ConstParam_VPtr &_msg)
 {
-  std::string topic("~/hydrodynamics");
+  std::string topic("~/wave_hydrodynamics");
   std::cout << "Received message on topic [" << topic << "]" << std::endl;
   std::cout << _msg->DebugString() << std::endl;
 }
@@ -56,7 +56,7 @@ int main(int _argc, char **_argv)
   {
     // Copyright notice.
     std::cout
-      << "ASV Wave Simulator: hydrodynamics parameter subscriber.\n"
+      << "ASV Wave Simulator: wave_hydrodynamics parameter subscriber.\n"
       << "Copyright (C) 2019  Rhys Mainwaring.\n"
       << "Released under the GNU General Public License.\n\n";
 
@@ -70,7 +70,7 @@ int main(int _argc, char **_argv)
     transport::NodePtr node(new transport::Node());
     node->Init();
 
-    std::string topic("~/hydrodynamics");
+    std::string topic("~/wave_hydrodynamics");
     transport::SubscriberPtr hydroSub =
       node->Subscribe(topic, &OnHydrodynamicsMsg);
 
