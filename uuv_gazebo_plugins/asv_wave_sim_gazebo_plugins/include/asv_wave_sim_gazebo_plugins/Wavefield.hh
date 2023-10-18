@@ -297,9 +297,33 @@ namespace asv
     /// \param[in] _point       The point at which we want the depth.
     /// \return                 The depth 'h' at the point.
     public: static double ComputeDepthDirectly(
-      const WaveParameters& _waveParams,
-      const Point3& _point,
+      std::shared_ptr<const WaveParameters> _waveParams,
+      const ignition::math::Vector3d& _point,
       double time);
+
+    /// \brief Compute the wave state, normal and velocities at point
+    /// (no sampling or interpolation).
+    ///
+    /// This method solves for (x, y) that when input into the
+        /// Gerstner wave function
+    /// gives the coordinates of the supplied parameter
+        /// _point (_point.x(), _point.y()),
+    /// computes surface tangent and normal.
+    /// Velocities as derivative of normal vector.
+    /// This is a numerical method that uses a multi-variate
+        /// Newton solver to solve
+    /// the two dimensional non-linear system. In general it is not as fast as
+    /// sampling from a discretised wave field with an efficient
+        /// line intersection algorithm.
+    ///
+    /// \param[in] _waveParams  Gerstner wave parameters.
+    /// \param[in] _point       The point at which we want the depth.
+    public: static void ComputeVelocities(
+        std::shared_ptr<const WaveParameters> _waveParams,
+        const ignition::math::Vector3d& _point,
+        Eigen::Vector3d& v,
+        Eigen::Vector3d& w,
+        double time, double time_init = 0);
 
     /// \internal
     /// \brief Pointer to the class private data.

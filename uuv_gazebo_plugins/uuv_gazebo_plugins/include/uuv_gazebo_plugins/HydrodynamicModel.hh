@@ -40,13 +40,18 @@
 #include <asv_wave_sim_gazebo_plugins/Wavefield.hh>
 #include <asv_wave_sim_gazebo_plugins/WavefieldEntity.hh>
 #include <asv_wave_sim_gazebo_plugins/WavefieldModelPlugin.hh>
+#include <asv_wave_sim_gazebo_plugins/Utilities.hh>
+#include <asv_wave_sim_gazebo_plugins/Grid.hh>
 
 namespace gazebo
 {
+
+class HydrodynamicsPluginPrivate;
+
 class HydrodynamicModel : public BuoyantObject
 {
   /// \brief Protected constructor: Use the factory for object creation.
-  protected: HydrodynamicModel(sdf::ElementPtr _sdf, physics::LinkPtr _link);
+  protected: HydrodynamicModel(physics::ModelPtr _model, sdf::ElementPtr _sdf, physics::LinkPtr _link);
 
   /// \brief Returns type of model
   public: virtual std::string GetType() = 0;
@@ -105,20 +110,24 @@ class HydrodynamicModel : public BuoyantObject
 
   /// \brief Temperature (not used by all models)
   protected: double temperature;
+
+  /// \internal
+  /// \brief Pointer to the class private data.
+  protected: std::shared_ptr<HydrodynamicsPluginPrivate> data;
 };
 
 /// \brief Pointer to model
 typedef boost::shared_ptr<HydrodynamicModel> HydrodynamicModelPtr;
 
 /// \brief Function pointer to create a certain a model
-typedef HydrodynamicModel* (*HydrodynamicModelCreator)(sdf::ElementPtr, \
+typedef HydrodynamicModel* (*HydrodynamicModelCreator)(physics::ModelPtr, sdf::ElementPtr, \
                                                        physics::LinkPtr);
 
 /// \brief Factory singleton class that creates a HydrodynamicModel from sdf.
 class HydrodynamicModelFactory
 {
   /// \brief Create HydrodynamicModel object according to its sdf Description.
-  public: HydrodynamicModel* CreateHydrodynamicModel(sdf::ElementPtr _sdf,
+  public: HydrodynamicModel* CreateHydrodynamicModel(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                                                      physics::LinkPtr _link);
 
   /// \brief Returns the singleton instance of this factory.
@@ -157,7 +166,7 @@ class HydrodynamicModelFactory
 class HMFossen : public HydrodynamicModel
 {
   /// \brief Create model of this type with parameter values from sdf.
-  public: static HydrodynamicModel* create(sdf::ElementPtr _sdf,
+  public: static HydrodynamicModel* create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
       physics::LinkPtr _link);
 
   /// \brief Return (derived) type of hydrodynamic model
@@ -183,7 +192,7 @@ class HMFossen : public HydrodynamicModel
   /// \brief Unique identifier for this geometry
   protected: static const std::string IDENTIFIER;
 
-  protected: HMFossen(sdf::ElementPtr _sdf, physics::LinkPtr _link);
+  protected: HMFossen(physics::ModelPtr _model, sdf::ElementPtr _sdf, physics::LinkPtr _link);
 
   /// \brief Computation of the hydrodynamic forces
   public: virtual void ApplyHydrodynamicForces(double time,
@@ -253,13 +262,13 @@ class HMFossen : public HydrodynamicModel
   protected: std::string waveModelName;
 
   /// \brief The wave parameters.
-  // protected: std::shared_ptr<const asv::WaveParameters> waveParams;
+  protected: std::shared_ptr<const asv::WaveParameters> waveParams;
 
   /// \brief Applies wave force on link
   // public: void ApplyWaveForce();
 
   /// \brief Computes the wave velocities in the world frame
-  // public: void ComputeWaveVel();
+  public: void ComputeWaveVel();
 
   /// \brief Wave linear velocity
   protected: Eigen::Vector3d WaveLinVel = Eigen::Vector3d::Zero();
@@ -274,7 +283,7 @@ class HMFossen : public HydrodynamicModel
 class HMSphere : public HMFossen
 {
   /// \brief Create model of this type with parameter values from sdf.
-  public: static HydrodynamicModel* create(sdf::ElementPtr _sdf,
+  public: static HydrodynamicModel* create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
       physics::LinkPtr _link);
 
   /// \brief Return (derived) type of hydrodynamic model
@@ -290,7 +299,7 @@ class HMSphere : public HMFossen
   /// \brief Unique identifier for this geometry
   protected: static const std::string IDENTIFIER;
 
-  protected: HMSphere(sdf::ElementPtr _sdf, physics::LinkPtr _link);
+  protected: HMSphere(physics::ModelPtr _model, sdf::ElementPtr _sdf, physics::LinkPtr _link);
 
   /// \brief Sphere radius
   protected: double radius;
@@ -308,7 +317,7 @@ class HMSphere : public HMFossen
 class HMCylinder : public HMFossen
 {
   /// \brief Create model of this type with parameter values from sdf.
-  public: static HydrodynamicModel* create(sdf::ElementPtr _sdf,
+  public: static HydrodynamicModel* create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
       physics::LinkPtr _link);
 
   /// \brief Return (derived) type of hydrodynamic model
@@ -324,7 +333,7 @@ class HMCylinder : public HMFossen
   /// \brief Unique identifier for this geometry
   protected: static const std::string IDENTIFIER;
 
-  protected: HMCylinder(sdf::ElementPtr _sdf, physics::LinkPtr _link);
+  protected: HMCylinder(physics::ModelPtr _model, sdf::ElementPtr _sdf, physics::LinkPtr _link);
 
   /// \brief Length of the cylinder
   protected: double length;
@@ -352,7 +361,7 @@ class HMCylinder : public HMFossen
 class HMSpheroid : public HMFossen
 {
   /// \brief Create model of this type with parameter values from sdf.
-  public: static HydrodynamicModel* create(sdf::ElementPtr _sdf,
+  public: static HydrodynamicModel* create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
       physics::LinkPtr _link);
 
   /// \brief Return (derived) type of hydrodynamic model
@@ -368,7 +377,7 @@ class HMSpheroid : public HMFossen
   /// \brief Unique identifier for this geometry
   protected: static const std::string IDENTIFIER;
 
-  protected: HMSpheroid(sdf::ElementPtr _sdf, physics::LinkPtr _link);
+  protected: HMSpheroid(physics::ModelPtr _model, sdf::ElementPtr _sdf, physics::LinkPtr _link);
 
   /// \brief Length of the sphroid
   protected: double length;
@@ -383,7 +392,7 @@ class HMSpheroid : public HMFossen
 class HMBox : public HMFossen
 {
   /// \brief Create model of this type with parameter values from sdf.
-  public: static HydrodynamicModel* create(sdf::ElementPtr _sdf,
+  public: static HydrodynamicModel* create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
       physics::LinkPtr _link);
 
   /// \brief Return (derived) type of hydrodynamic model
@@ -400,7 +409,7 @@ class HMBox : public HMFossen
   protected: static const std::string IDENTIFIER;
 
   /// \brief Constructor
-  protected: HMBox(sdf::ElementPtr _sdf, physics::LinkPtr _link);
+  protected: HMBox(physics::ModelPtr _model, sdf::ElementPtr _sdf, physics::LinkPtr _link);
 
   /// \brief Drag coefficient
   protected: double Cd;

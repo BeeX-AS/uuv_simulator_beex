@@ -913,8 +913,8 @@ namespace asv
   }
 
   double WavefieldSampler::ComputeDepthDirectly(  
-    const WaveParameters& _waveParams,
-    const Point3& _point,
+    std::shared_ptr<const WaveParameters> _waveParams,
+    const ignition::math::Vector3d& _point,
     double time
   )
   {
@@ -1000,12 +1000,12 @@ namespace asv
 
     // Set up parameter references
     WaveParams wp(
-      _waveParams.Amplitude_V(),
-      _waveParams.Wavenumber_V(),
-      _waveParams.AngularFrequency_V(),
-      _waveParams.Phase_V(),
-      _waveParams.Steepness_V(),
-      _waveParams.Direction_V()
+      _waveParams->Amplitude_V(),
+      _waveParams->Wavenumber_V(),
+      _waveParams->AngularFrequency_V(),
+      _waveParams->Phase_V(),
+      _waveParams->Steepness_V(),
+      _waveParams->Direction_V()
     );
 
     // Tolerances etc.
@@ -1013,10 +1013,197 @@ namespace asv
     const double nmax = 30;
 
     // Use the target point as the initial guess (this is within sum{amplitudes} of the solution)
-    Eigen::Vector2d p2(_point.x(), _point.y());
+    Eigen::Vector2d p2(_point.X(), _point.Y());
     const double pz = solver(wave_fdf, p2, p2, time, wp, tol, nmax);
-    const double h = pz - _point.z();
+    const double h = pz - _point.Z();
     return h;
+  }
+
+  // Compute the target function and Jacobian.
+  // cppcheck-suppress constParameter
+  void WavefieldSampler::ComputeVelocities(
+    std::shared_ptr<const WaveParameters> _waveParams,
+    const ignition::math::Vector3d& _point,
+    Eigen::Vector3d& v,
+    Eigen::Vector3d& w,
+    double time,
+    double time_init)
+  {
+    // Struture for passing wave parameters to lambdas
+    struct WaveParams
+    {
+      WaveParams(
+        const std::vector<double>& _a,
+        const std::vector<double>& _k,
+        const std::vector<double>& _omega,
+        const std::vector<double>& _phi,
+        const std::vector<double>& _q,
+        const std::vector<Vector2>& _dir) :
+        a(_a), k(_k), omega(_omega), phi(_phi), q(_q), dir(_dir) {}
+
+      const std::vector<double>& a;
+      const std::vector<double>& k;
+      const std::vector<double>& omega;
+      const std::vector<double>& phi;
+      const std::vector<double>& q;
+      const std::vector<Vector2>& dir;
+    };
+
+    // Compute the target function and Jacobian. Also calculate pz,
+    // the z-component of the Gerstner wave, which we essentially get for free.
+    // cppcheck-suppress constParameter
+    auto wave_fdf = [=](auto x, auto p, auto t, auto& wp, auto& F, auto& J)
+    {
+      // double pz = 0;
+      F(0) = p.x() - x.x();
+      F(1) = p.y() - x.y();
+      J(0, 0) = -1;
+      J(0, 1) =  0;
+      J(1, 0) =  0;
+      J(1, 1) = -1;
+      const size_t n = wp.a.size();
+      for (auto&& i = 0; i < n; ++i) // NOLINT
+      {
+        double dx = wp.dir[i][0];
+        double dy = wp.dir[i][1];
+        // const double q = wp.q[i];
+        const double a = wp.a[i];
+        const double k = wp.k[i];
+        const double dot = x.x() * dx + x.y() * dy;
+        const double theta = k * dot - wp.omega[i] * t + wp.phi[i];
+        const double s = std::sin(theta);
+        const double c = std::cos(theta);
+        const double akc = a * k * c;
+        const double df1x = akc * dx * dx;
+        const double df1y = akc * dx * dy;
+        const double df2x = df1y;
+        const double df2y = akc * dy * dy;
+        // pz += a * c;
+        F(0) += a * dx * s;
+        F(1) += a * dy * s;
+        J(0, 0) += df1x;
+        J(0, 1) += df1y;
+        J(1, 0) += df2x;
+        J(1, 1) += df2y;
+      }
+      // Exponentially grow the waves
+      // return pz * (1-exp(-1.0*(time-time_init)/_waveParams.Tau()));
+    };
+
+    auto solveVelocities = [=](auto x, auto wp, auto t, auto& v, auto& w)
+    {
+      v(0) = v(1) = v(2) = 0;
+      Eigen::Vector3d N;
+      N(2) = 1;
+      Eigen::Vector3d dN;
+      const size_t n = wp.a.size();
+      for (auto&& i = 0; i < n; ++i) // NOLINT
+      {
+        double dx = wp.dir[i][0];
+        double dy = wp.dir[i][1];
+        // const double q = wp.q[i];
+        const double a = wp.a[i];
+        const double k = wp.k[i];
+        // const double dot = x.x() * dx + x.y() * dy;
+        // const double theta = k * dot - wp.omega[i] * t + wp.phi[i];
+        // const double s = std::sin(theta);
+        // const double c = std::cos(theta);
+        // const double dot_1 = (x.x()-0.25) * dx + (x.y()-0.25) * dy;
+        // const double dot_2 = (x.x()+0.25) * dx + (x.x()+0.25) * dy;
+        const double dot_1 = x.x() * dx + x.y() * dy - 0.25;
+        const double dot_2 = x.x() * dx + x.y() * dy + 0.25;
+        const double theta_1 = k * dot_1 - wp.omega[i] * t + wp.phi[i];
+        const double theta_2 = k * dot_2 - wp.omega[i] * t + wp.phi[i];
+        const double s = 1/k*(std::cos(theta_2) - std::cos(theta_1))/.5;
+        const double c = 1/k*(std::sin(theta_2) - std::sin(theta_1))/.5;
+        const double awc = a * wp.omega[i] * c;
+        const double aks = a * k * s;
+        const double akc = a * k * c;
+        // const double lambda = 2 * M_PI / k;
+        // const double scale = cos(-wp.omega[i] * t)-cos(2 * M_PI * 0.5 / lambda - wp.omega[i] * t);
+        // std::cout << " " << scale;
+        v(0) += dx * awc;
+        v(1) += dy * awc;
+        v(2) += a * wp.omega[i] * s;
+        N(0) += dx * aks;
+        N(1) += dy * aks;
+        N(2) -= akc;
+        dN(0) -= dx * wp.omega[i] * akc;
+        dN(1) -= dy * wp.omega[i] * akc;
+        dN(2) -= wp.omega[i] * aks;
+      }
+      double N_norm = N.norm();
+      double pitch = atan(N(0) / N(2));
+      double roll = asin(-N(1) / N_norm);
+      Eigen::Vector3d dNormN = (1/N_norm) * dN - ((N.dot(dN))/pow(N_norm,3)) * N;
+      // std::cout<< N << " " << roll << " " << pitch << " " << "dNormN " << dNormN << std::endl;
+      w(0) = -dNormN(1)/cos(roll);
+      w(1) = (dNormN(0) + w(0) * sin(roll) * sin(pitch)) / (cos(roll) * cos(pitch));
+      w(2) = 0;
+      // std::cout<< N << " " << roll << " " << pitch << " " << std::endl << "dNormN "<< std::endl << dNormN << std::endl;
+      // std::cout<< "W" << std::endl << w << std::endl;
+
+      // v *= (1-exp(-1.0*(time-time_init)/_waveParams.Tau()));
+      // w *= (1-exp(-1.0*(time-time_init)/_waveParams.Tau()));
+
+      // std::cout << (time) << std::endl;
+      // std::cout<< "lin vel " << v << std::endl;
+      // std::cout<< "ang vel " << w << std::endl;
+    };
+
+    // Simple multi-variate Newton solver -
+    // this version returns the z-component of the
+    // wave field at the desired point p.
+    // cppcheck-suppress constParameter
+    auto solver = [=](auto& fdfunc, auto x0, auto p, auto t, \
+                      auto& wp, auto tol, auto nmax, auto& v, auto& w)
+    {
+      int n = 0;
+      double err = 1;
+      double pz = 0;
+      auto xn = x0;
+      Eigen::Vector2d F;
+      Eigen::Matrix2d J;
+      while (std::abs(err) > tol && n < nmax)
+      {
+        fdfunc(x0, p, t, wp, F, J);
+        xn = x0 - J.inverse() * F;
+        x0 = xn;
+        err = F.norm();
+        n++;
+      }
+      solveVelocities(x0, wp, t, v, w);
+      // std::cout<< "lin vel " << v << std::endl;
+      // std::cout<< "ang vel " << w << std::endl;
+      // return pz;
+    };
+
+    // Set up parameter references
+    WaveParams wp(
+      _waveParams->Amplitude_V(),
+      _waveParams->Wavenumber_V(),
+      _waveParams->AngularFrequency_V(),
+      _waveParams->Phase_V(),
+      _waveParams->Steepness_V(),
+      _waveParams->Direction_V());
+
+    // Tolerances etc.
+    const double tol = 1.0E-10;
+    const double nmax = 30;
+
+    if (wp.a.size() == 0){
+      v(0) = v(1) = v(2) = w(0) = w(1) = w(2) = 0;
+      return;
+    }
+
+    // Use the target point as the initial guess
+    // (this is within sum{amplitudes} of the solution)
+    Eigen::Vector2d p2(_point.X(), _point.Y());
+    // const double pz = solver(wave_fdf, p2, p2, time, wp, tol, nmax);
+    solver(wave_fdf, p2, p2, time, wp, tol, nmax, v, w);
+    // Removed so that height is reported relative to mean water level
+    // const double h = pz - _point.Z();
+    // const double h = pz;
   }
 
 ///////////////////////////////////////////////////////////////////////////////

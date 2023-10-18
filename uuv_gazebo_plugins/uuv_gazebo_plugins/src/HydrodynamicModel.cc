@@ -18,9 +18,129 @@
 
 namespace gazebo
 {
+
+///////////////////////////////////////////////////////////////////////////////
+// HydrodynamicsLinkData
+
+  /// \internal
+  /// \brief A class to hold data required for wave_hydrodynamics calculations
+  /// for each link in a model.
+  class HydrodynamicsLinkData
+  {
+    /// \brief A Link pointer.
+    public: physics::LinkPtr link;
+
+    /// \brief The wavefield sampler for this link.
+    public: std::shared_ptr<asv::WavefieldSampler> wavefieldSampler;
+    
+    /// \brief The initial meshes for this link.
+    // public: std::vector<std::shared_ptr<Mesh>> initLinkMeshes;
+
+    /// \brief The transformed meshes for this link.
+    // public: std::vector<std::shared_ptr<Mesh>> linkMeshes;
+
+    /// \brief Objects to compute the wave_hydrodynamics forces for each link mesh.
+    // public: std::vector<std::shared_ptr<Hydrodynamics>> wave_hydrodynamics;
+
+    /// \brief Marker messages for the water patch.
+    // public: ignition::msgs::Marker waterPatchMsg;
+
+    /// \brief Marker messages for the waterline.
+    // public: std::vector<ignition::msgs::Marker> waterlineMsgs;
+
+    /// \brief Marker messages for the underwater portion of the mesh.
+    // public: std::vector<ignition::msgs::Marker> underwaterSurfaceMsgs;
+  };
+
+///////////////////////////////////////////////////////////////////////////////
+// HydrodynamicsPluginPrivate
+
+  /// \internal
+  /// \brief A class to manage the private data required by the HydrodynamicsPlugin.
+  class HydrodynamicsPluginPrivate
+  {
+    /// \brief World pointer.
+    public: physics::WorldPtr world;
+
+    /// \brief Model pointer.
+    public: physics::ModelPtr model;
+
+    /// \brief Pointer to the World wavefield.
+    public: std::shared_ptr<const asv::Wavefield> wavefield;
+
+    /// \brief Hydrodynamics parameters for the entire model.
+    // public: std::shared_ptr<HydrodynamicsParameters> hydroParams;
+
+    /// \brief Hydrodynamic physics for each Link.
+    public: std::vector<std::shared_ptr<HydrodynamicsLinkData>> hydroData;
+
+    /// \brief The wave model name. This is used to retrieve a pointer to the wave field.
+    public: std::string waveModelName;
+
+    /// \brief Show the water patch markers.
+    public: bool showWaterPatch;
+
+    /// \brief Show the waterline markers.
+    public: bool showWaterline;
+
+    /// \brief Show the underwater surface.
+    public: bool showUnderwaterSurface;
+
+    /// \brief The update rate for visual markers.
+    public: double updateRate;
+
+    /// \brief Previous update time.
+    public: common::Time prevTime;
+
+    /// \brief Connection to the World Update events.
+    public: event::ConnectionPtr updateConnection;
+
+    /// \brief Ignition transport node for igntopic "/marker".
+    public: ignition::transport::Node ignNode;
+
+    /// \brief Gazebo transport node.
+    public: transport::NodePtr gzNode;
+
+    /// \brief Subscribe to gztopic "~/wave_hydrodynamics".
+    public: transport::SubscriberPtr hydroSub;
+  };
+
+/// \brief Retrive a pointer to a wavefield from the Wavefield plugin.
+///
+/// \param _world           A pointer to the world containing the wave field.
+/// \param _waveModelName   The name of the wavefield model containing the wave field. 
+/// \return A valid wavefield if found and nullptr if not.
+std::shared_ptr<const asv::Wavefield> GetWavefield(
+  physics::WorldPtr _world,
+  const std::string& _waveModelName)
+{
+  GZ_ASSERT(_world != nullptr, "World is null");
+
+  physics::ModelPtr wavefieldModel = _world->ModelByName(_waveModelName);    
+  if(wavefieldModel == nullptr)
+  {
+    gzerr << "No Wavefield Model found with name '" << _waveModelName << "'." << std::endl;
+    return nullptr;
+  }
+
+  std::string wavefieldEntityName(asv::WavefieldEntity::MakeName(_waveModelName));
+
+  physics::BasePtr base = wavefieldModel->GetChild(wavefieldEntityName);
+  boost::shared_ptr<asv::WavefieldEntity> wavefieldEntity 
+    = boost::dynamic_pointer_cast<asv::WavefieldEntity>(base);
+  if (wavefieldEntity == nullptr)
+  {
+    gzerr << "Wavefield Entity is null: " << wavefieldEntityName << std::endl;
+    return nullptr;
+  }    
+  GZ_ASSERT(wavefieldEntity->GetWavefield() != nullptr, "Wavefield is null.");
+
+  return wavefieldEntity->GetWavefield();
+}
+
 /////////////////////////////////////////////////
-HydrodynamicModel::HydrodynamicModel(sdf::ElementPtr _sdf,
-    physics::LinkPtr _link) : BuoyantObject(_link)
+HydrodynamicModel::HydrodynamicModel(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+    physics::LinkPtr _link) : BuoyantObject(_link), data(new HydrodynamicsPluginPrivate())
 {
   GZ_ASSERT(_link != NULL, "Invalid link pointer");
 
@@ -102,6 +222,31 @@ HydrodynamicModel::HydrodynamicModel(sdf::ElementPtr _sdf,
 
   // Initialize temperature (not used by all models)
   this->temperature = 0;
+
+  // Capture the Model & World pointers
+  this->data->model = _model;
+  this->data->world = _model->GetWorld();
+  GZ_ASSERT(this->data->world != nullptr, "Model has invalid World");
+
+  // Wave Model
+  this->data->waveModelName = asv::Utilities::SdfParamString(*_sdf, "wave_model", "");
+
+  std::shared_ptr<HydrodynamicsLinkData> hd(new HydrodynamicsLinkData);
+  this->data->hydroData.push_back(hd);
+  // hd->initLinkMeshes.resize(meshCount);
+  // hd->linkMeshes.resize(meshCount);
+  // hd->hydrodynamics.resize(meshCount);
+  // hd->waterlineMsgs.resize(meshCount);
+  // hd->underwaterSurfaceMsgs.resize(meshCount);
+
+  // Wavefield and Link
+  hd->link = _link;
+
+  // The link pose is required for the water patch, the CoM pose for dynamics.
+  ignition::math::Pose3d linkPose = hd->link->WorldPose();
+  ignition::math::Pose3d linkCoMPose = hd->link->WorldCoGPose();
+
+  gzmsg << "Done init of HydrodynamicModel" << std::endl;
 }
 
 /////////////////////////////////////////////////
@@ -165,7 +310,7 @@ bool HydrodynamicModel::CheckParams(sdf::ElementPtr _sdf)
 
 /////////////////////////////////////////////////
 HydrodynamicModel * HydrodynamicModelFactory::CreateHydrodynamicModel(
-    sdf::ElementPtr _sdf, physics::LinkPtr _link)
+    physics::ModelPtr _model, sdf::ElementPtr _sdf, physics::LinkPtr _link)
 {
   GZ_ASSERT(_sdf->HasElement("hydrodynamic_model"),
             "Hydrodynamic model is missing");
@@ -185,7 +330,7 @@ HydrodynamicModel * HydrodynamicModelFactory::CreateHydrodynamicModel(
     return NULL;
   }
 
-  return creators_[identifier](_sdf, _link);
+  return creators_[identifier](_model, _sdf, _link);
 }
 
 /////////////////////////////////////////////////
@@ -219,16 +364,16 @@ REGISTER_HYDRODYNAMICMODEL_CREATOR(HMFossen,
                                    &HMFossen::create);
 
 /////////////////////////////////////////////////
-HydrodynamicModel* HMFossen::create(sdf::ElementPtr _sdf,
+HydrodynamicModel* HMFossen::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                                     physics::LinkPtr _link)
 {
-  return new HMFossen(_sdf, _link);
+  return new HMFossen(_model, _sdf, _link);
 }
 
 /////////////////////////////////////////////////
-HMFossen::HMFossen(sdf::ElementPtr _sdf,
+HMFossen::HMFossen(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                    physics::LinkPtr _link)
-                  : HydrodynamicModel(_sdf, _link)
+                  : HydrodynamicModel(_model, _sdf, _link)
 {
   std::vector<double> addedMass(36, 0.0);
   std::vector<double> linDampCoef(6, 0.0);
@@ -362,11 +507,11 @@ HMFossen::HMFossen(sdf::ElementPtr _sdf,
   this->quadDampCoef = quadDampCoef;
 
   // Capture the wave model
-  // if (_sdf->HasElement("wave_model"))
-  // {
-  //   this->waveModelName = _sdf->Get<std::string>("wave_model");
-  // }
-  // this->waveParams = nullptr;
+  if (_sdf->HasElement("wave_model"))
+  {
+    this->waveModelName = _sdf->Get<std::string>("wave_model");
+  }
+  this->waveParams = nullptr;
 
 }
 
@@ -395,9 +540,9 @@ void HMFossen::ApplyHydrodynamicForces(
 #endif
 
   // Update wave flow velocity
-  // this->ComputeWaveVel();
-  // ignition::math::Vector3d waveFlowVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveLinVel));
-  // ignition::math::Vector3d waveFlowAngVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveAngVel));
+  this->ComputeWaveVel();
+  ignition::math::Vector3d waveFlowVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveLinVel));
+  ignition::math::Vector3d waveFlowAngVel = pose.Rot().RotateVectorReverse(Vec3dToGazebo(this->WaveAngVel));
   // std::cout << std::endl << waveFlowVel << std::endl << waveFlowAngVel << std::endl;
 
   // Transform the flow velocity to the BODY frame
@@ -408,10 +553,10 @@ void HMFossen::ApplyHydrodynamicForces(
   Eigen::Vector6d velRel, acc;
   // Compute the relative velocity
   velRel = EigenStack(
-    // this->ToNED(linVel - flowVel - waveFlowVel),
-    // this->ToNED(angVel - waveFlowAngVel));
-    this->ToNED(linVel - flowVel),
-    this->ToNED(angVel));
+    this->ToNED(linVel - flowVel - waveFlowVel),
+    this->ToNED(angVel - waveFlowAngVel));
+    // this->ToNED(linVel - flowVel),
+    // this->ToNED(angVel));
   // std::cout << linVel << " " << flowVel << " " << waveFlowVel << " " << angVel << " " << waveFlowAngVel << "\n";
 
   // Update added Coriolis matrix
@@ -712,43 +857,54 @@ void HMFossen::Print(std::string _paramName, std::string _message)
 }
 
 /////////////////////////////////////////////////
-// void HMFossen::ComputeWaveVel()
-// {
-//   // update wave height if wave model specified
-//   if (!this->waveModelName.empty())
-//   {
-//     // If we haven't yet, retrieve the wave parameters from ocean model plugin.
-//     // if (!this->waveParams)
-//     // {
-//     //   gzmsg << "usv_gazebo_dynamics_plugin: waveParams is null. "
-//     //         << "Trying to get wave parameters from ocean model" << std::endl;
-//     //   this->waveParams = asv::WavefieldModelPlugin::GetWaveParams(
-//     //       this->link->GetWorld(), this->waveModelName);
-//     // }
+void HMFossen::ComputeWaveVel()
+{
+  // update wave height if wave model specified
+  if (!this->waveModelName.empty())
+  {
+    // If we haven't yet, retrieve the wave parameters from ocean model plugin.
+    // Update wavefield 
+    this->data->wavefield = GetWavefield(
+      this->data->world, this->data->waveModelName);
+    if (this->data->wavefield == nullptr) 
+    {
+      gzerr << "Wavefield is NULL" << std::endl;
+      return;
+    }
 
-//     #if GAZEBO_MAJOR_VERSION >= 8
-//       double simTime = this->link->GetWorld()->SimTime().Double();
-//     #else
-//       double simTime = this->link->GetWorld()->GetSimTime().Double();
-//     #endif
+    #if GAZEBO_MAJOR_VERSION >= 8
+      double simTime = this->link->GetWorld()->SimTime().Double();
+    #else
+      double simTime = this->link->GetWorld()->GetSimTime().Double();
+    #endif
 
-//     // get wave height for each link
-//     // for (auto& link : this->linkMap)
-//     // {
-//       // auto linkPtr = link.second;
-//       auto linkPtr = this->link;
-//       #if GAZEBO_MAJOR_VERSION >= 8
-//         ignition::math::Pose3d linkFrame = linkPtr->WorldPose();
-//       #else
-//         ignition::math::Pose3d linkFrame = linkPtr->GetWorldPose().Ign();
-//       #endif
+    // get wave height for each link
+    // for (auto& link : this->linkMap)
+    // {
+      // auto linkPtr = link.second;
+      auto linkPtr = this->link;
+      #if GAZEBO_MAJOR_VERSION >= 8
+        ignition::math::Pose3d linkFrame = linkPtr->WorldPose();
+      #else
+        ignition::math::Pose3d linkFrame = linkPtr->GetWorldPose().Ign();
+      #endif
 
-//       // Compute the wave displacement at the centre of the link frame.
-//       // Wave field height at the link, relative to the mean water level.
-//       WavefieldSampler::ComputeVelocities(
-//           *waveParams, this->link->WorldPose().Pos(), this->WaveLinVel, this->WaveAngVel, simTime);
-//   }
-// }
+      // Compute the wave displacement at the centre of the link frame.
+      // Wave field height at the link, relative to the mean water level.
+
+      asv::WavefieldSampler::ComputeVelocities(
+          this->data->wavefield->GetParameters(), this->link->WorldPose().Pos(), this->WaveLinVel, this->WaveAngVel, simTime);
+
+      double depth_from_water_line = asv::WavefieldSampler::ComputeDepthDirectly(
+          this->data->wavefield->GetParameters(), this->link->WorldPose().Pos(), simTime);
+
+
+      // gzmsg << "depth: " << depth_from_water_line << std::endl;
+      gzmsg << "simTime: " << simTime << std::endl;
+      this->WaveLinVel *= 0.2; 
+      this->WaveAngVel *= 0.2;
+  }
+}
 
 //////////////////////////////////////////////////////////////////////////
 // Hydrodynamic model for a sphere
@@ -759,16 +915,16 @@ REGISTER_HYDRODYNAMICMODEL_CREATOR(HMSphere,
                                    &HMSphere::create);
 
 /////////////////////////////////////////////////
-HydrodynamicModel* HMSphere::create(sdf::ElementPtr _sdf,
+HydrodynamicModel* HMSphere::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                                     physics::LinkPtr _link)
 {
-  return new HMSphere(_sdf, _link);
+  return new HMSphere(_model, _sdf, _link);
 }
 
 /////////////////////////////////////////////////
-HMSphere::HMSphere(sdf::ElementPtr _sdf,
+HMSphere::HMSphere(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                    physics::LinkPtr _link)
-                   : HMFossen(_sdf, _link)
+                   : HMFossen(_model, _sdf, _link)
 {
   GZ_ASSERT(_sdf->HasElement("hydrodynamic_model"),
             "Hydrodynamic model is missing");
@@ -851,16 +1007,16 @@ REGISTER_HYDRODYNAMICMODEL_CREATOR(HMCylinder,
                                    &HMCylinder::create);
 
 /////////////////////////////////////////////////
-HydrodynamicModel* HMCylinder::create(sdf::ElementPtr _sdf,
+HydrodynamicModel* HMCylinder::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                                       physics::LinkPtr _link)
 {
-  return new HMCylinder(_sdf, _link);
+  return new HMCylinder(_model, _sdf, _link);
 }
 
 /////////////////////////////////////////////////
-HMCylinder::HMCylinder(sdf::ElementPtr _sdf,
+HMCylinder::HMCylinder(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                        physics::LinkPtr _link)
-                       : HMFossen(_sdf, _link)
+                       : HMFossen(_model, _sdf, _link)
 {
   GZ_ASSERT(_sdf->HasElement("hydrodynamic_model"),
             "Hydrodynamic model is missing");
@@ -1023,16 +1179,16 @@ REGISTER_HYDRODYNAMICMODEL_CREATOR(HMSpheroid,
                                    &HMSpheroid::create);
 
 /////////////////////////////////////////////////
-HydrodynamicModel* HMSpheroid::create(sdf::ElementPtr _sdf,
+HydrodynamicModel* HMSpheroid::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                                       physics::LinkPtr _link)
 {
-  return new HMSpheroid(_sdf, _link);
+  return new HMSpheroid(_model, _sdf, _link);
 }
 
 /////////////////////////////////////////////////
-HMSpheroid::HMSpheroid(sdf::ElementPtr _sdf,
+HMSpheroid::HMSpheroid(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                        physics::LinkPtr _link)
-                       : HMFossen(_sdf, _link)
+                       : HMFossen(_model, _sdf, _link)
 {
   gzerr << "Hydrodynamic model for a spheroid is still in development!"
     << std::endl;
@@ -1132,16 +1288,16 @@ REGISTER_HYDRODYNAMICMODEL_CREATOR(HMBox,
                                    &HMBox::create);
 
 /////////////////////////////////////////////////
-HydrodynamicModel* HMBox::create(sdf::ElementPtr _sdf,
+HydrodynamicModel* HMBox::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                                  physics::LinkPtr _link)
 {
-  return new HMBox(_sdf, _link);
+  return new HMBox(_model, _sdf, _link);
 }
 
 /////////////////////////////////////////////////
-HMBox::HMBox(sdf::ElementPtr _sdf,
+HMBox::HMBox(physics::ModelPtr _model, sdf::ElementPtr _sdf,
              physics::LinkPtr _link)
-             : HMFossen(_sdf, _link)
+             : HMFossen(_model, _sdf, _link)
 {
   gzerr << "Hydrodynamic model for box is still in development!" << std::endl;
 

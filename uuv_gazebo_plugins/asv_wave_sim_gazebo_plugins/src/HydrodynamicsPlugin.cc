@@ -626,9 +626,13 @@ namespace asv
 
     for (size_t i=0; i<links.size(); ++i)
     {
+      // TODO: Quick fix to calculation blow up, remove latter
+      // Now only calculate for 1st link, which is base_link
       if (i > 0) {
         continue;
       }
+      // ------------------------------------------------------
+
       // Create storage
       size_t meshCount = meshes[i].size();
       std::shared_ptr<HydrodynamicsLinkData> hd(new HydrodynamicsLinkData);
@@ -641,7 +645,8 @@ namespace asv
 
       // Wavefield and Link
       hd->link = links[i];
-      gzmsg << "link cout:" << int(i) << std::endl;
+      gzmsg << "link count:" << int(i) << std::endl;
+      gzmsg << "mesh count:" << int(meshCount) << std::endl;
 
       // The link pose is required for the water patch, the CoM pose for dynamics.
       ignition::math::Pose3d linkPose = hd->link->WorldPose();
@@ -654,7 +659,6 @@ namespace asv
       if(patchSize <= 0.0)
         patchSize = 0.0000001;
       std::shared_ptr<Grid> initWaterPatch(new Grid({patchSize, patchSize}, { 4, 4 }));
-      gzmsg << "Water patch size debug" << std::endl;
       // WavefieldSampler - this is updated by the pose of the link (not the CoM).
       hd->wavefieldSampler.reset(new WavefieldSampler(
         this->data->wavefield, initWaterPatch));
@@ -686,11 +690,11 @@ namespace asv
             this->data->hydroParams,
             hd->linkMeshes[j],
             hd->wavefieldSampler));
+            
         hd->wave_hydrodynamics[j]->Update(
           hd->wavefieldSampler, linkCoMPose, linVelocity, angVelocity);
       }
       
-      gzmsg << "end of link loop" << std::endl;
     }
   }
 
