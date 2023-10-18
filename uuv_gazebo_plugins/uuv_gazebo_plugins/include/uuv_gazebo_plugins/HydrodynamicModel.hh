@@ -268,7 +268,7 @@ class HMFossen : public HydrodynamicModel
   // public: void ApplyWaveForce();
 
   /// \brief Computes the wave velocities in the world frame
-  public: void ComputeWaveVel();
+  public: void UpdateWaveDynamic();
 
   /// \brief Wave linear velocity
   protected: Eigen::Vector3d WaveLinVel = Eigen::Vector3d::Zero();
