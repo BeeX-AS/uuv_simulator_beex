@@ -16,50 +16,50 @@
     #include <gazebo/gazebo.hh>
     #include <uuv_gazebo_plugins/HydrodynamicModel.hh>
 
-    namespace gazebo
-    {
+namespace gazebo
+{
 
-    ///////////////////////////////////////////////////////////////////////////////
-    // HydrodynamicsLinkData
+///////////////////////////////////////////////////////////////////////////////
+// HydrodynamicsLinkData
 
-    /// \internal
-    /// \brief A class to hold data required for wave_hydrodynamics calculations
-    /// for each link in a model.
-    class HydrodynamicsLinkData
-    {
-        /// \brief A Link pointer.
-        public: physics::LinkPtr link;
+/// \internal
+/// \brief A class to hold data required for wave_hydrodynamics calculations
+/// for each link in a model.
+class HydrodynamicsLinkData
+{
+    /// \brief A Link pointer.
+    public: physics::LinkPtr link;
 
-        /// \brief The wavefield sampler for this link.
-        public: std::shared_ptr<asv::WavefieldSampler> wavefieldSampler;
-        
-        /// \brief The initial meshes for this link.
-        // public: std::vector<std::shared_ptr<Mesh>> initLinkMeshes;
+    /// \brief The wavefield sampler for this link.
+    public: std::shared_ptr<asv::WavefieldSampler> wavefieldSampler;
+    
+    /// \brief The initial meshes for this link.
+    // public: std::vector<std::shared_ptr<Mesh>> initLinkMeshes;
 
-        /// \brief The transformed meshes for this link.
-        // public: std::vector<std::shared_ptr<Mesh>> linkMeshes;
+    /// \brief The transformed meshes for this link.
+    // public: std::vector<std::shared_ptr<Mesh>> linkMeshes;
 
-        /// \brief Objects to compute the wave_hydrodynamics forces for each link mesh.
-        // public: std::vector<std::shared_ptr<Hydrodynamics>> wave_hydrodynamics;
+    /// \brief Objects to compute the wave_hydrodynamics forces for each link mesh.
+    // public: std::vector<std::shared_ptr<Hydrodynamics>> wave_hydrodynamics;
 
-        /// \brief Marker messages for the water patch.
-        // public: ignition::msgs::Marker waterPatchMsg;
+    /// \brief Marker messages for the water patch.
+    // public: ignition::msgs::Marker waterPatchMsg;
 
-        /// \brief Marker messages for the waterline.
-        // public: std::vector<ignition::msgs::Marker> waterlineMsgs;
+    /// \brief Marker messages for the waterline.
+    // public: std::vector<ignition::msgs::Marker> waterlineMsgs;
 
-        /// \brief Marker messages for the underwater portion of the mesh.
-        // public: std::vector<ignition::msgs::Marker> underwaterSurfaceMsgs;
-    };
+    /// \brief Marker messages for the underwater portion of the mesh.
+    // public: std::vector<ignition::msgs::Marker> underwaterSurfaceMsgs;
+};
 
-    ///////////////////////////////////////////////////////////////////////////////
-    // HydrodynamicsPluginPrivate
+///////////////////////////////////////////////////////////////////////////////
+// HydrodynamicsPluginPrivate
 
-    /// \internal
-    /// \brief A class to manage the private data required by the HydrodynamicsPlugin.
-    class HydrodynamicsPluginPrivate
-    {
-        /// \brief World pointer.
+/// \internal
+/// \brief A class to manage the private data required by the HydrodynamicsPlugin.
+class HydrodynamicsPluginPrivate
+{
+    /// \brief World pointer.
         public: physics::WorldPtr world;
 
         /// \brief Model pointer.
@@ -69,6 +69,8 @@
         public: std::shared_ptr<const asv::Wavefield> wavefield;
 
         public: double waterVolume;
+
+        public: bool waveDepthEffect;
 
         /// \brief Hydrodynamics parameters for the entire model.
         // public: std::shared_ptr<HydrodynamicsParameters> hydroParams;
@@ -105,17 +107,17 @@
 
         /// \brief Subscribe to gztopic "~/wave_hydrodynamics".
         public: transport::SubscriberPtr hydroSub;
-    };
+};
 
-    /// \brief Retrive a pointer to a wavefield from the Wavefield plugin.
-    ///
-    /// \param _world           A pointer to the world containing the wave field.
-    /// \param _waveModelName   The name of the wavefield model containing the wave field. 
-    /// \return A valid wavefield if found and nullptr if not.
-    std::shared_ptr<const asv::Wavefield> GetWavefield(
-    physics::WorldPtr _world,
-    const std::string& _waveModelName)
-    {
+/// \brief Retrive a pointer to a wavefield from the Wavefield plugin.
+///
+/// \param _world           A pointer to the world containing the wave field.
+/// \param _waveModelName   The name of the wavefield model containing the wave field. 
+/// \return A valid wavefield if found and nullptr if not.
+std::shared_ptr<const asv::Wavefield> GetWavefield(
+physics::WorldPtr _world,
+const std::string& _waveModelName)
+{
     GZ_ASSERT(_world != nullptr, "World is null");
 
     physics::ModelPtr wavefieldModel = _world->ModelByName(_waveModelName);    
@@ -138,12 +140,12 @@
     GZ_ASSERT(wavefieldEntity->GetWavefield() != nullptr, "Wavefield is null.");
 
     return wavefieldEntity->GetWavefield();
-    }
+}
 
-    /////////////////////////////////////////////////
-    HydrodynamicModel::HydrodynamicModel(physics::ModelPtr _model, sdf::ElementPtr _sdf,
-        physics::LinkPtr _link) : BuoyantObject(_link), data(new HydrodynamicsPluginPrivate())
-    {
+/////////////////////////////////////////////////
+HydrodynamicModel::HydrodynamicModel(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+    physics::LinkPtr _link) : BuoyantObject(_link), data(new HydrodynamicsPluginPrivate())
+{
     GZ_ASSERT(_link != NULL, "Invalid link pointer");
 
     // Initialize filtered acceleration & last velocity
@@ -251,12 +253,12 @@
     ignition::math::Pose3d linkCoMPose = hd->link->WorldCoGPose();
 
     gzmsg << "Done init of HydrodynamicModel" << std::endl;
-    }
+}
 
-    /////////////////////////////////////////////////
-    void HydrodynamicModel::ComputeAcc(Eigen::Vector6d _velRel, double _time,
-                                    double _alpha)
-    {
+/////////////////////////////////////////////////
+void HydrodynamicModel::ComputeAcc(Eigen::Vector6d _velRel, double _time,
+                                double _alpha)
+{
     // Compute Fossen's nu-dot numerically. We have to do this for now since
     // Gazebo reports angular accelerations that are off by orders of magnitude.
     double dt = _time - lastTime;
@@ -277,11 +279,11 @@
 
     lastTime = _time;
     this->lastVelRel = _velRel;
-    }
+}
 
-    /////////////////////////////////////////////////
-    ignition::math::Vector3d HydrodynamicModel::ToNED(ignition::math::Vector3d _vec)
-    {
+/////////////////////////////////////////////////
+ignition::math::Vector3d HydrodynamicModel::ToNED(ignition::math::Vector3d _vec)
+{
     ignition::math::Vector3d output = _vec;
     output.Y() = -1 * output.Y();
     output.Z() = -1 * output.Z();
@@ -289,13 +291,13 @@
     }
 
     /////////////////////////////////////////////////
-    ignition::math::Vector3d HydrodynamicModel::FromNED(ignition::math::Vector3d _vec)
-    {
+ignition::math::Vector3d HydrodynamicModel::FromNED(ignition::math::Vector3d _vec)
+{
     return this->ToNED(_vec);
-    }
+}
 
-    /////////////////////////////////////////////////
-    bool HydrodynamicModel::CheckParams(sdf::ElementPtr _sdf)
+/////////////////////////////////////////////////
+bool HydrodynamicModel::CheckParams(sdf::ElementPtr _sdf)
     {
     if (this->params.empty()) return true;
 
@@ -310,12 +312,12 @@
     }
 
     return true;
-    }
+}
 
-    /////////////////////////////////////////////////
-    HydrodynamicModel * HydrodynamicModelFactory::CreateHydrodynamicModel(
-        physics::ModelPtr _model, sdf::ElementPtr _sdf, physics::LinkPtr _link)
-    {
+/////////////////////////////////////////////////
+HydrodynamicModel * HydrodynamicModelFactory::CreateHydrodynamicModel(
+    physics::ModelPtr _model, sdf::ElementPtr _sdf, physics::LinkPtr _link)
+{
     GZ_ASSERT(_sdf->HasElement("hydrodynamic_model"),
                 "Hydrodynamic model is missing");
     sdf::ElementPtr sdfModel = _sdf->GetElement("hydrodynamic_model");
@@ -335,19 +337,19 @@
     }
 
     return creators_[identifier](_model, _sdf, _link);
-    }
+}
 
-    /////////////////////////////////////////////////
-    HydrodynamicModelFactory& HydrodynamicModelFactory::GetInstance()
-    {
+/////////////////////////////////////////////////
+HydrodynamicModelFactory& HydrodynamicModelFactory::GetInstance()
+{
     static HydrodynamicModelFactory instance;
     return instance;
-    }
+}
 
-    /////////////////////////////////////////////////
-    bool HydrodynamicModelFactory::RegisterCreator(const std::string& _identifier,
+/////////////////////////////////////////////////
+bool HydrodynamicModelFactory::RegisterCreator(const std::string& _identifier,
                                 HydrodynamicModelCreator _creator)
-    {
+{
     if (creators_.find(_identifier) != creators_.end())
     {
         std::cerr << "Warning: Registering HydrodynamicModel with identifier: "
@@ -357,28 +359,28 @@
 
     std::cout << "Registered HydrodynamicModel type " << _identifier << std::endl;
     return true;
-    }
+}
 
-    //////////////////////////////////////////////////////////////////////////
-    // Fossen's robot-like equations of motion for underwater vehicles
-    //////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+// Fossen's robot-like equations of motion for underwater vehicles
+//////////////////////////////////////////////////////////////////////////
 
-    const std::string HMFossen::IDENTIFIER = "fossen";
-    REGISTER_HYDRODYNAMICMODEL_CREATOR(HMFossen,
-                                    &HMFossen::create);
+const std::string HMFossen::IDENTIFIER = "fossen";
+REGISTER_HYDRODYNAMICMODEL_CREATOR(HMFossen,
+                                &HMFossen::create);
 
-    /////////////////////////////////////////////////
-    HydrodynamicModel* HMFossen::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
-                                        physics::LinkPtr _link)
-    {
+/////////////////////////////////////////////////
+HydrodynamicModel* HMFossen::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+                                    physics::LinkPtr _link)
+{
     return new HMFossen(_model, _sdf, _link);
-    }
+}
 
     /////////////////////////////////////////////////
-    HMFossen::HMFossen(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+HMFossen::HMFossen(physics::ModelPtr _model, sdf::ElementPtr _sdf,
                     physics::LinkPtr _link)
                     : HydrodynamicModel(_model, _sdf, _link)
-    {
+{
     std::vector<double> addedMass(36, 0.0);
     std::vector<double> linDampCoef(6, 0.0);
     std::vector<double> linDampForward(6, 0.0);
@@ -436,6 +438,14 @@
             modelParams->Get<std::string>("quadratic_damping"));
     else
         gzmsg << "HMFossen: Using quad damping NULL" << std::endl;
+
+    if (modelParams->HasElement("wave_depth_effect"))
+        this->data->waveDepthEffect =  modelParams->Get<bool>("wave_depth_effect");
+    else{
+        this->data->waveDepthEffect = false;
+        gzmsg << "HMFossen: Using quad damping NULL" << std::endl;
+    }
+        
 
     // Add quadratic damping coefficients to the parameter list
     this->params.push_back("quadratic_damping");
@@ -517,12 +527,12 @@
     }
     this->waveParams = nullptr;
 
-    }
+}
 
-    /////////////////////////////////////////////////
-    void HMFossen::ApplyHydrodynamicForces(
-    double _time, const ignition::math::Vector3d &_flowVelWorld)
-    {
+/////////////////////////////////////////////////
+void HMFossen::ApplyHydrodynamicForces(
+            double _time, const ignition::math::Vector3d &_flowVelWorld)
+{
     // Link's pose
     ignition::math::Pose3d pose;
     ignition::math::Vector3d linVel, angVel;
@@ -906,6 +916,7 @@
 
         // TODO: Handle bouancy base on volume
         double underwater_volume;
+
         if(depth_from_water_line > 0) {
             underwater_volume = this->data->waterVolume;
         }
@@ -915,34 +926,59 @@
         else {
             underwater_volume = this->data->waterVolume * abs(depth_from_water_line)/this->boundingBox.XLength();
         }
+
+        underwater_volume =  (underwater_volume <= 0) ? this->data->waterVolume : underwater_volume;
         this->SetVolume(underwater_volume);
         
-        double magic_velocity_scale = 0.5;
-        this->WaveLinVel *= magic_velocity_scale; 
-        this->WaveAngVel *= magic_velocity_scale;
+        auto linear_interpolate = [](double value, double low_value, double high_value, 
+                                       double low_gain, double high_gain) {
+            if(abs(value) < low_value)
+                return low_gain;
+            else if(abs(value) > high_value)
+                return high_gain;
+            
+            double a = (high_gain - low_gain)/(high_value - low_value);
+            double b = high_gain - high_value * a;
+            return abs(value) * a + b;
+        };
+
+        double ratio;
+        if(this->data->waveDepthEffect == true) {
+            double half_wave_length = this->data->wavefield->GetParameters()->Wavelength()/2.0;
+            ratio = linear_interpolate(abs(depth_from_water_line), 0.01, half_wave_length, 0.6, 0.0);
+            // gzmsg << "Wavefield is half_wave_length " << half_wave_length <<  std::endl;
+        }
+        else {
+            ratio = 0.5;
+        }
+        
+        // gzmsg << "Wavefield is depth_from_water_line " << depth_from_water_line <<  std::endl;
+        // gzmsg << "Wavefield is ratio " << ratio <<  std::endl;
+        this->WaveLinVel *= ratio;
+        this->WaveAngVel *= ratio;
     }
-    }
+}
 
-    //////////////////////////////////////////////////////////////////////////
-    // Hydrodynamic model for a sphere
-    //////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+// Hydrodynamic model for a sphere
+//////////////////////////////////////////////////////////////////////////
 
-    const std::string HMSphere::IDENTIFIER = "sphere";
-    REGISTER_HYDRODYNAMICMODEL_CREATOR(HMSphere,
-                                    &HMSphere::create);
+const std::string HMSphere::IDENTIFIER = "sphere";
+REGISTER_HYDRODYNAMICMODEL_CREATOR(HMSphere,
+                                &HMSphere::create);
 
-    /////////////////////////////////////////////////
-    HydrodynamicModel* HMSphere::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
-                                        physics::LinkPtr _link)
-    {
+/////////////////////////////////////////////////
+HydrodynamicModel* HMSphere::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+                                    physics::LinkPtr _link)
+{
     return new HMSphere(_model, _sdf, _link);
-    }
+}
 
-    /////////////////////////////////////////////////
-    HMSphere::HMSphere(physics::ModelPtr _model, sdf::ElementPtr _sdf,
-                    physics::LinkPtr _link)
-                    : HMFossen(_model, _sdf, _link)
-    {
+/////////////////////////////////////////////////
+HMSphere::HMSphere(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+                physics::LinkPtr _link)
+                : HMFossen(_model, _sdf, _link)
+{
     GZ_ASSERT(_sdf->HasElement("hydrodynamic_model"),
                 "Hydrodynamic model is missing");
 
@@ -1013,28 +1049,28 @@
         std::cout << std::setw(12) << this->radius << std::endl;
     else
         HMFossen::Print(_paramName, _message);
-    }
+}
 
-    //////////////////////////////////////////////////////////////////////////
-    // Hydrodynamic model for a cylinder
-    //////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+// Hydrodynamic model for a cylinder
+//////////////////////////////////////////////////////////////////////////
 
-    const std::string HMCylinder::IDENTIFIER = "cylinder";
-    REGISTER_HYDRODYNAMICMODEL_CREATOR(HMCylinder,
-                                    &HMCylinder::create);
+const std::string HMCylinder::IDENTIFIER = "cylinder";
+REGISTER_HYDRODYNAMICMODEL_CREATOR(HMCylinder,
+                                &HMCylinder::create);
 
-    /////////////////////////////////////////////////
-    HydrodynamicModel* HMCylinder::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
-                                        physics::LinkPtr _link)
-    {
+/////////////////////////////////////////////////
+HydrodynamicModel* HMCylinder::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+                                    physics::LinkPtr _link)
+{
     return new HMCylinder(_model, _sdf, _link);
-    }
+}
 
-    /////////////////////////////////////////////////
-    HMCylinder::HMCylinder(physics::ModelPtr _model, sdf::ElementPtr _sdf,
-                        physics::LinkPtr _link)
-                        : HMFossen(_model, _sdf, _link)
-    {
+/////////////////////////////////////////////////
+HMCylinder::HMCylinder(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+                    physics::LinkPtr _link)
+                    : HMFossen(_model, _sdf, _link)
+{
     GZ_ASSERT(_sdf->HasElement("hydrodynamic_model"),
                 "Hydrodynamic model is missing");
 
@@ -1186,21 +1222,21 @@
     }
     else
         HMFossen::Print(_paramName, _message);
-    }
+}
 
-    //////////////////////////////////////////////////////////////////////////
-    // Hydrodynamic model for a spheroid (STILL IN DEVELOPMENT, DON'T USE IT)
-    //////////////////////////////////////////////////////////////////////////
-    const std::string HMSpheroid::IDENTIFIER = "spheroid";
-    REGISTER_HYDRODYNAMICMODEL_CREATOR(HMSpheroid,
-                                    &HMSpheroid::create);
+//////////////////////////////////////////////////////////////////////////
+// Hydrodynamic model for a spheroid (STILL IN DEVELOPMENT, DON'T USE IT)
+//////////////////////////////////////////////////////////////////////////
+const std::string HMSpheroid::IDENTIFIER = "spheroid";
+REGISTER_HYDRODYNAMICMODEL_CREATOR(HMSpheroid,
+                                &HMSpheroid::create);
 
-    /////////////////////////////////////////////////
-    HydrodynamicModel* HMSpheroid::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
-                                        physics::LinkPtr _link)
-    {
+/////////////////////////////////////////////////
+HydrodynamicModel* HMSpheroid::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+                                    physics::LinkPtr _link)
+{
     return new HMSpheroid(_model, _sdf, _link);
-    }
+}
 
     /////////////////////////////////////////////////
     HMSpheroid::HMSpheroid(physics::ModelPtr _model, sdf::ElementPtr _sdf,
@@ -1275,11 +1311,11 @@
     this->Ma(4, 4) /= (2 * ba_minus - ba_plus * (alpha - beta));
 
     this->Ma(5, 5) = this->Ma(4, 4);
-    }
+}
 
-    /////////////////////////////////////////////////
-    void HMSpheroid::Print(std::string _paramName, std::string _message)
-    {
+/////////////////////////////////////////////////
+void HMSpheroid::Print(std::string _paramName, std::string _message)
+{
     if (!_paramName.compare("radius"))
     {
         if (!_message.empty())
@@ -1294,28 +1330,28 @@
     }
     else
         HMFossen::Print(_paramName, _message);
-    }
+}
 
-    //////////////////////////////////////////////////////////////////////////
-    // Hydrodynamic model for a box (STILL IN DEVELOPMENT, DON'T USE IT)
-    //////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+// Hydrodynamic model for a box (STILL IN DEVELOPMENT, DON'T USE IT)
+//////////////////////////////////////////////////////////////////////////
 
-    const std::string HMBox::IDENTIFIER = "box";
-    REGISTER_HYDRODYNAMICMODEL_CREATOR(HMBox,
-                                    &HMBox::create);
+const std::string HMBox::IDENTIFIER = "box";
+REGISTER_HYDRODYNAMICMODEL_CREATOR(HMBox,
+                                &HMBox::create);
 
-    /////////////////////////////////////////////////
-    HydrodynamicModel* HMBox::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
-                                    physics::LinkPtr _link)
-    {
+/////////////////////////////////////////////////
+HydrodynamicModel* HMBox::create(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+                                physics::LinkPtr _link)
+{
     return new HMBox(_model, _sdf, _link);
-    }
+}
 
-    /////////////////////////////////////////////////
-    HMBox::HMBox(physics::ModelPtr _model, sdf::ElementPtr _sdf,
-                physics::LinkPtr _link)
-                : HMFossen(_model, _sdf, _link)
-    {
+/////////////////////////////////////////////////
+HMBox::HMBox(physics::ModelPtr _model, sdf::ElementPtr _sdf,
+            physics::LinkPtr _link)
+            : HMFossen(_model, _sdf, _link)
+{
     gzerr << "Hydrodynamic model for box is still in development!" << std::endl;
 
     GZ_ASSERT(_sdf->HasElement("hydrodynamic_model"),
@@ -1347,30 +1383,30 @@
                         * this->fluidDensity;
     this->quadDampCoef[2] = -0.5 * this->Cd * this->width * this->length \
                         * this->fluidDensity;
-    }
+}
 
-    /////////////////////////////////////////////////
-    void HMBox::Print(std::string _paramName, std::string _message)
+/////////////////////////////////////////////////
+void HMBox::Print(std::string _paramName, std::string _message)
+{
+    if (!_paramName.compare("length"))
     {
-        if (!_paramName.compare("length"))
-        {
-        if (!_message.empty())
-            gzmsg << _message << std::endl;
-        std::cout << std::setw(12) << this->length << std::endl;
-        }
-        else if (!_paramName.compare("width"))
-        {
-        if (!_message.empty())
-            gzmsg << _message << std::endl;
-        std::cout << std::setw(12) << this->width << std::endl;
-        }
-        else if (!_paramName.compare("height"))
-        {
-        if (!_message.empty())
-            gzmsg << _message << std::endl;
-        std::cout << std::setw(12) << this->height << std::endl;
-        }
-        else
-        HMFossen::Print(_paramName, _message);
+    if (!_message.empty())
+        gzmsg << _message << std::endl;
+    std::cout << std::setw(12) << this->length << std::endl;
     }
+    else if (!_paramName.compare("width"))
+    {
+    if (!_message.empty())
+        gzmsg << _message << std::endl;
+    std::cout << std::setw(12) << this->width << std::endl;
     }
+    else if (!_paramName.compare("height"))
+    {
+    if (!_message.empty())
+        gzmsg << _message << std::endl;
+    std::cout << std::setw(12) << this->height << std::endl;
+    }
+    else
+    HMFossen::Print(_paramName, _message);
+}
+}
