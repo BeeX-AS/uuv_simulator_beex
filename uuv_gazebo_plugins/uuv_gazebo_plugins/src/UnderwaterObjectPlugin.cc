@@ -138,7 +138,7 @@ void UnderwaterObjectPlugin::Load(physics::ModelPtr _model,
       HydrodynamicModelPtr hydro;
       hydro.reset(
         HydrodynamicModelFactory::GetInstance().CreateHydrodynamicModel(
-        linkElem, link));
+        _model, linkElem, link));
       hydro->SetFluidDensity(fluidDensity);
       hydro->SetGravity(gAcc);
 
