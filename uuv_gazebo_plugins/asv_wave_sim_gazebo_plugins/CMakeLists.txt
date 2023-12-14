@@ -14,7 +14,7 @@ find_package(CGAL REQUIRED COMPONENTS Core)
 
 if(NOT CGAL_FOUND)
   message(STATUS "This project requires the CGAL library, and will not be compiled.")
-  return()  
+  return()
 endif()
 
 # include helper file
@@ -29,7 +29,7 @@ find_package(gazebo REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(TBB REQUIRED)
 
-############################################################################### 
+###############################################################################
 # Catkin...
 
 catkin_package(
@@ -65,7 +65,7 @@ link_directories(
   ${TBB_LIBRARY_DIRS}
   )
 
-############################################################################### 
+###############################################################################
 # Libraries...
 
 # Hydrodynamics
@@ -95,7 +95,7 @@ target_compile_options(Hydrodynamics PRIVATE "-Wno-unknown-pragmas")
 
 list(APPEND ASV_WAVE_GAZEBO_LIBRARIES_LIST Hydrodynamics)
 
-############################################################################### 
+###############################################################################
 # Plugins...
 
 # HydrodynamicsPlugin
@@ -149,7 +149,7 @@ target_compile_options(WavefieldVisualPlugin PRIVATE "-Wno-unknown-pragmas")
 
 list(APPEND ASV_WAVE_GAZEBO_PLUGINS_LIST WavefieldVisualPlugin)
 
-############################################################################### 
+###############################################################################
 # Executables...
 
 include_directories(
@@ -166,7 +166,7 @@ add_executable(TestRunner
   src/MeshTools_TEST.cc
 )
 
-target_link_libraries(TestRunner  
+target_link_libraries(TestRunner
   ${GAZEBO_LIBRARIES}
   ${ASV_WAVE_GAZEBO_LIBRARIES_LIST}
   ${CGAL_LIBRARIES}
@@ -183,7 +183,7 @@ add_executable(GzTestRunner
   src/GzPhysics_TEST.cc
 )
 
-target_link_libraries(GzTestRunner  
+target_link_libraries(GzTestRunner
   ${GAZEBO_LIBRARIES}
   ${ASV_WAVE_GAZEBO_LIBRARIES_LIST}
   pthread
@@ -197,7 +197,7 @@ add_executable(HydrodynamicsMsgPublisher
   src/HydrodynamicsMsgPublisher.cc
 )
 
-target_link_libraries(HydrodynamicsMsgPublisher  
+target_link_libraries(HydrodynamicsMsgPublisher
   ${GAZEBO_LIBRARIES}
   ${ASV_WAVE_GAZEBO_LIBRARIES_LIST}
 )
@@ -214,7 +214,7 @@ add_executable(HydrodynamicsMsgSubscriber
   src/HydrodynamicsMsgSubscriber.cc
 )
 
-target_link_libraries(HydrodynamicsMsgSubscriber  
+target_link_libraries(HydrodynamicsMsgSubscriber
   ${GAZEBO_LIBRARIES}
   ${ASV_WAVE_GAZEBO_LIBRARIES_LIST}
 )
@@ -231,7 +231,7 @@ add_executable(WaveMsgPublisher
   src/WaveMsgPublisher.cc
 )
 
-target_link_libraries(WaveMsgPublisher  
+target_link_libraries(WaveMsgPublisher
   ${GAZEBO_LIBRARIES}
   ${ASV_WAVE_GAZEBO_LIBRARIES_LIST}
 )
@@ -242,11 +242,13 @@ add_dependencies(WaveMsgPublisher
   ${ASV_WAVE_GAZEBO_LIBRARIES_LIST}
 )
 
+list(APPEND ASV_WAVE_GAZEBO_EXECUTABLES_LIST WaveMsgPublisher)
+
 add_executable(WaveMsgSubscriber
   src/WaveMsgSubscriber.cc
 )
 
-target_link_libraries(WaveMsgSubscriber  
+target_link_libraries(WaveMsgSubscriber
   ${GAZEBO_LIBRARIES}
   ${ASV_WAVE_GAZEBO_LIBRARIES_LIST}
 )
@@ -259,12 +261,12 @@ add_dependencies(WaveMsgSubscriber
 
 list(APPEND ASV_WAVE_GAZEBO_EXECUTABLES_LIST WaveMsgSubscriber)
 
-############################################################################### 
+###############################################################################
 # Tests...
-# 
+#
 # Useful notes on running catkin tests:
 # http://www.personalrobotics.ri.cmu.edu/software/unit-testing
-# 
+#
 
 if(CATKIN_ENABLE_TESTING)
 
@@ -290,7 +292,7 @@ if(CATKIN_ENABLE_TESTING)
 
 endif()
 
-############################################################################### 
+###############################################################################
 # Install
 
 install(TARGETS ${ASV_WAVE_GAZEBO_LIBRARIES_LIST}
