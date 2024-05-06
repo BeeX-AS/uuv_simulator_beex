@@ -23,54 +23,70 @@
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/algorithm/string.hpp>
-#include <gazebo/gazebo.hh>
-#include <gazebo/common/Plugin.hh>
-#include <gazebo/common/Event.hh>
-#include <gazebo/physics/Model.hh>
-#include <gazebo/physics/Joint.hh>
-#include <gazebo/physics/World.hh>
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <gazebo/common/Event.hh>
+#include <gazebo/common/Plugin.hh>
+#include <gazebo/gazebo.hh>
+#include <gazebo/physics/Joint.hh>
+#include <gazebo/physics/Model.hh>
+#include <gazebo/physics/World.hh>
 #include <sstream>
 
-namespace uuv_simulator_ros
-{
-class JointStatePublisher : public gazebo::ModelPlugin
-{
-  public: JointStatePublisher();
+#include <bx_msgs/LockDown.hpp>
 
-  public: ~JointStatePublisher();
+namespace uuv_simulator_ros {
+class JointStatePublisher : public gazebo::ModelPlugin {
+public:
+    JointStatePublisher();
 
-  public: void Load(gazebo::physics::ModelPtr _parent, sdf::ElementPtr _sdf);
+public:
+    ~JointStatePublisher();
 
-  public: void OnUpdate(const gazebo::common::UpdateInfo &_info);
+public:
+    void Load(gazebo::physics::ModelPtr _parent, sdf::ElementPtr _sdf);
 
-  public: void PublishJointStates();
+public:
+    void OnUpdate(const gazebo::common::UpdateInfo &_info);
 
-  private: bool IsIgnoredJoint(std::string _jointName);
+public:
+    void PublishJointStates();
 
-  private: gazebo::physics::WorldPtr world;
+private:
+    bool IsIgnoredJoint(std::string _jointName);
 
-  private: gazebo::physics::ModelPtr model;
+private:
+    gazebo::physics::WorldPtr world;
 
-  private: gazebo::event::ConnectionPtr updateConnection;
+private:
+    gazebo::physics::ModelPtr model;
 
-  private: boost::shared_ptr<ros::NodeHandle> node;
+private:
+    gazebo::event::ConnectionPtr updateConnection;
 
-  private: std::string robotNamespace;
+private:
+    boost::shared_ptr<ros::NodeHandle> node;
 
-  private: std::vector<std::string> movingJoints;
+private:
+    std::string robotNamespace;
 
-  private: double updateRate;
+private:
+    std::vector<std::string> movingJoints;
 
-  private: double updatePeriod;
+private:
+    double updateRate;
 
-  private: gazebo::common::Time lastUpdate;
+private:
+    double updatePeriod;
 
-  private: ros::Publisher jointStatePub;
+private:
+    gazebo::common::Time lastUpdate;
+
+private:
+    ros::Publisher jointStatePub;
 };
-}
+}  // namespace uuv_simulator_ros
 
 #endif  // __JOINT_STATE_PUBLISHER_HH__
