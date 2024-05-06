@@ -294,12 +294,6 @@ private:
 
 private:
     std::map<std::string, ros::ServiceServer> services;
-
-private:
-    geometry_msgs::TransformStamped nedTransform;
-
-private:
-    tf2_ros::TransformBroadcaster tfBroadcaster;
 };
 }  // namespace uuv_simulator_ros
 
